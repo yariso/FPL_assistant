@@ -1,0 +1,1116 @@
+{
+  "current_weights": {
+    "form_weight": 0.2,
+    "ict_weight": 0.15,
+    "fdr_weight": 0.15,
+    "consistency_weight": 0.1,
+    "team_strength_weight": 0.05,
+    "xg_weight": 0.35,
+    "mae": 1.0133431208053691,
+    "correlation": 0.46878170470910274,
+    "top_10_hit_rate": 0.06666666666666667,
+    "captain_accuracy": 0.3333333333333333,
+    "tested_at": "2026-01-26T15:56:44.366952",
+    "gameweeks_tested": [
+      20,
+      21,
+      22
+    ]
+  },
+  "historical_results": [
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.1515968519928914,
+      "correlation": 0.4639738366317997,
+      "top_10_hit_rate": 0.12,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T17:33:06.765251"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.1643108940327034,
+      "correlation": 0.45195758317928814,
+      "top_10_hit_rate": 0.1,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T17:33:11.631025"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.2243146880248026,
+      "correlation": 0.41556962925051777,
+      "top_10_hit_rate": 0.06,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T18:41:01.530135"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.986227877535202,
+      "correlation": 0.3979798448262122,
+      "top_10_hit_rate": 0.05,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:04:01.672233"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.9030453020134226,
+      "correlation": 0.4485590538654816,
+      "top_10_hit_rate": 0.06666666666666667,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:04:31.093803"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.928098502157908,
+      "correlation": 0.43749986360477783,
+      "top_10_hit_rate": 0.08,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:13:11.078415"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.9040016778523492,
+      "correlation": 0.4480188754590631,
+      "top_10_hit_rate": 0.06666666666666667,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:44:52.873955"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.029385630870779,
+      "correlation": 0.438966458942788,
+      "top_10_hit_rate": 0.06,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:53:50.768545"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.029385630870779,
+      "correlation": 0.438966458942788,
+      "top_10_hit_rate": 0.06,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:54:06.466985"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.029385630870779,
+      "correlation": 0.438966458942788,
+      "top_10_hit_rate": 0.06,
+      "captain_accuracy": 0.4,
+      "gameweeks_tested": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:57:32.089622"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.029385630870779,
+      "correlation": 0.438966458942788,
+      "top_10_hit_rate": 0.06,
+      "captain_accuracy": 0.4,
+      "gameweeks_tested": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T19:57:52.794626"
+    },
+    {
+      "weights": {
+        "form_weight": 0.35,
+        "ict_weight": 0.2,
+        "fdr_weight": 0.25,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.1,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 2.002776845637584,
+      "correlation": 0.4522417543886177,
+      "top_10_hit_rate": 0.06666666666666667,
+      "captain_accuracy": 0.6666666666666666,
+      "gameweeks_tested": [
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-25T20:08:20.459016"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.3142927270378504,
+      "correlation": 0.44517254865074796,
+      "top_10_hit_rate": 0.07,
+      "captain_accuracy": 0.0,
+      "gameweeks_tested": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T10:26:05.836339"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.2513674496644296,
+      "correlation": 0.4757173041967471,
+      "top_10_hit_rate": 0.06666666666666667,
+      "captain_accuracy": 0.3333333333333333,
+      "gameweeks_tested": [
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T13:10:24.620595"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.288795761078998,
+      "correlation": 0.4526563095291392,
+      "top_10_hit_rate": 0.0625,
+      "captain_accuracy": 0.125,
+      "gameweeks_tested": [
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T13:38:40.266689"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.051913357400722,
+      "correlation": 0.45382047314644464,
+      "top_10_hit_rate": 0.03333333333333333,
+      "captain_accuracy": 0.16666666666666666,
+      "gameweeks_tested": [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T15:30:28.942870"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.0436662452591656,
+      "correlation": 0.4618665138531769,
+      "top_10_hit_rate": 0.05,
+      "captain_accuracy": 0.25,
+      "gameweeks_tested": [
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T15:37:10.490748"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.0133431208053691,
+      "correlation": 0.46878170470910274,
+      "top_10_hit_rate": 0.06666666666666667,
+      "captain_accuracy": 0.3333333333333333,
+      "gameweeks_tested": [
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T15:56:44.366919"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2,
+        "ict_weight": 0.15,
+        "fdr_weight": 0.15,
+        "consistency_weight": 0.1,
+        "team_strength_weight": 0.05,
+        "xg_weight": 0.35,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.058053949903661,
+      "correlation": 0.4561402153600113,
+      "top_10_hit_rate": 0.05,
+      "captain_accuracy": 0.25,
+      "gameweeks_tested": [
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "tested_at": "2026-01-26T17:37:10.466754"
+    },
+    {
+      "weights": {
+        "form_weight": 0.15488036910281075,
+        "ict_weight": 0.11578283593721754,
+        "fdr_weight": 0.05194531740065591,
+        "consistency_weight": 0.14620049677391253,
+        "team_strength_weight": 0.09888630321486018,
+        "xg_weight": 0.4323046775705431,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:19.414199"
+    },
+    {
+      "weights": {
+        "form_weight": 0.1973767642035507,
+        "ict_weight": 0.1183073358865097,
+        "fdr_weight": 0.16495672416037782,
+        "consistency_weight": 0.10171791959822912,
+        "team_strength_weight": 0.05163081701089165,
+        "xg_weight": 0.36601043914044107,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:20.285879"
+    },
+    {
+      "weights": {
+        "form_weight": 0.23719789348702097,
+        "ict_weight": 0.1344671424372676,
+        "fdr_weight": 0.09288977412108101,
+        "consistency_weight": 0.08922593651064281,
+        "team_strength_weight": 0.05093132279577433,
+        "xg_weight": 0.39528793064821316,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:21.132066"
+    },
+    {
+      "weights": {
+        "form_weight": 0.1705516748342768,
+        "ict_weight": 0.11244946735591314,
+        "fdr_weight": 0.16845728917301042,
+        "consistency_weight": 0.09512715609018471,
+        "team_strength_weight": 0.04606302053557554,
+        "xg_weight": 0.40735139201103937,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:22.025339"
+    },
+    {
+      "weights": {
+        "form_weight": 0.27342229869373397,
+        "ict_weight": 0.1775149630261599,
+        "fdr_weight": 0.05679366783470685,
+        "consistency_weight": 0.16020065873116032,
+        "team_strength_weight": 0.054189128085207316,
+        "xg_weight": 0.27787928362903164,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:22.952240"
+    },
+    {
+      "weights": {
+        "form_weight": 0.3107521249077859,
+        "ict_weight": 0.09119885636381198,
+        "fdr_weight": 0.11370672651858085,
+        "consistency_weight": 0.11345556444343564,
+        "team_strength_weight": 0.05558057873397886,
+        "xg_weight": 0.3153061490324068,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:23.965179"
+    },
+    {
+      "weights": {
+        "form_weight": 0.21837945304424267,
+        "ict_weight": 0.19635096821815307,
+        "fdr_weight": 0.08178115849276746,
+        "consistency_weight": 0.07396459625490477,
+        "team_strength_weight": 0.06007298063310476,
+        "xg_weight": 0.3694508433568272,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:24.870355"
+    },
+    {
+      "weights": {
+        "form_weight": 0.13288594851044128,
+        "ict_weight": 0.19847676087225966,
+        "fdr_weight": 0.18935321169082286,
+        "consistency_weight": 0.05936445154008989,
+        "team_strength_weight": 0.06729576390542026,
+        "xg_weight": 0.35262386348096614,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:25.779667"
+    },
+    {
+      "weights": {
+        "form_weight": 0.18969857358122566,
+        "ict_weight": 0.19189548823021602,
+        "fdr_weight": 0.16766006951409876,
+        "consistency_weight": 0.11708817589763702,
+        "team_strength_weight": 0.04195019654969766,
+        "xg_weight": 0.2917074962271248,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:26.673436"
+    },
+    {
+      "weights": {
+        "form_weight": 0.24087704872405116,
+        "ict_weight": 0.11127441629895746,
+        "fdr_weight": 0.1778119035466318,
+        "consistency_weight": 0.060823966710681326,
+        "team_strength_weight": 0.04675624588587657,
+        "xg_weight": 0.36245641883380164,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:27.566874"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2284860394430604,
+        "ict_weight": 0.2373526329144457,
+        "fdr_weight": 0.0693597515481152,
+        "consistency_weight": 0.08107593877628627,
+        "team_strength_weight": 0.07822985961779905,
+        "xg_weight": 0.3054957777002934,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:28.542970"
+    },
+    {
+      "weights": {
+        "form_weight": 0.164264587045269,
+        "ict_weight": 0.1886098094801584,
+        "fdr_weight": 0.10479640614110979,
+        "consistency_weight": 0.11485875127073057,
+        "team_strength_weight": 0.07097595418127355,
+        "xg_weight": 0.35649449188145876,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:29.497653"
+    },
+    {
+      "weights": {
+        "form_weight": 0.2557687532882837,
+        "ict_weight": 0.190878076080233,
+        "fdr_weight": 0.06801168122851188,
+        "consistency_weight": 0.05404745754905396,
+        "team_strength_weight": 0.10113860687535747,
+        "xg_weight": 0.3301554249785601,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:30.578395"
+    },
+    {
+      "weights": {
+        "form_weight": 0.23720473187158259,
+        "ict_weight": 0.13291582173415012,
+        "fdr_weight": 0.10456499679241604,
+        "consistency_weight": 0.07490604617107986,
+        "team_strength_weight": 0.07878429295682188,
+        "xg_weight": 0.37162411047394955,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:31.596781"
+    },
+    {
+      "weights": {
+        "form_weight": 0.23306042998310728,
+        "ict_weight": 0.18047164724467366,
+        "fdr_weight": 0.09505550307073084,
+        "consistency_weight": 0.13163712838889421,
+        "team_strength_weight": 0.04733084443909736,
+        "xg_weight": 0.3124444468734967,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:32.502446"
+    },
+    {
+      "weights": {
+        "form_weight": 0.14713360547089227,
+        "ict_weight": 0.12545637347290428,
+        "fdr_weight": 0.09919330340316777,
+        "consistency_weight": 0.15202488066577946,
+        "team_strength_weight": 0.057572365161478345,
+        "xg_weight": 0.41861947182577774,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:33.452028"
+    },
+    {
+      "weights": {
+        "form_weight": 0.11712898520008891,
+        "ict_weight": 0.16011694124083112,
+        "fdr_weight": 0.12411565296016902,
+        "consistency_weight": 0.16419912190390384,
+        "team_strength_weight": 0.05759069647689929,
+        "xg_weight": 0.3768486022181078,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:34.434895"
+    },
+    {
+      "weights": {
+        "form_weight": 0.1351163228303063,
+        "ict_weight": 0.17690369989352328,
+        "fdr_weight": 0.19044537020001073,
+        "consistency_weight": 0.06000252633282322,
+        "team_strength_weight": 0.04415018189318789,
+        "xg_weight": 0.3933818988501487,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:35.417856"
+    },
+    {
+      "weights": {
+        "form_weight": 0.274301912362805,
+        "ict_weight": 0.17214726579298245,
+        "fdr_weight": 0.10492036518670207,
+        "consistency_weight": 0.05205268056806213,
+        "team_strength_weight": 0.058021714266095044,
+        "xg_weight": 0.3385560618233534,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:36.430964"
+    },
+    {
+      "weights": {
+        "form_weight": 0.21789738443680456,
+        "ict_weight": 0.10369244653812759,
+        "fdr_weight": 0.19194174373953857,
+        "consistency_weight": 0.0915505956301946,
+        "team_strength_weight": 0.05230308457192294,
+        "xg_weight": 0.3426147450834118,
+        "mae": null,
+        "correlation": null,
+        "top_10_hit_rate": null,
+        "captain_accuracy": null,
+        "tested_at": null,
+        "gameweeks_tested": null
+      },
+      "mae": 1.021789765565919,
+      "correlation": 0.4720813667732236,
+      "top_10_hit_rate": 0.04,
+      "captain_accuracy": 0.2,
+      "gameweeks_tested": [
+        23,
+        22,
+        21,
+        20,
+        19
+      ],
+      "tested_at": "2026-01-26T17:37:37.298039"
+    }
+  ],
+  "last_updated": "2026-01-26T17:37:37.298068",
+  "version": 1
+}

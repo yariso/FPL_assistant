@@ -1,0 +1,17 @@
+{
+  "best_weights": {
+    "recent_form_weight": 0.17654321736160566,
+    "rolling_xg_weight": 0.2735243945902924,
+    "fixture_difficulty_weight": 0.09180167719361554,
+    "season_form_weight": 0.07036898110987999,
+    "ict_index_weight": 0.09922318897345792,
+    "team_momentum_weight": 0.12383343347872486,
+    "home_away_weight": 0.021410882899810326,
+    "opposition_weakness_weight": 0.04072063198594846,
+    "minutes_certainty_weight": 0.04020743439000934,
+    "ownership_trend_weight": 0.062366158016655696
+  },
+  "best_score": 1.9548459652099,
+  "optimized_at": "2026-01-26T20:37:46.762090",
+  "iterations": 30
+}

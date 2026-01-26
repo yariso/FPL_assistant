@@ -1,0 +1,71 @@
+[project]
+name = "fpl-assistant"
+version = "0.1.0"
+description = "A local Fantasy Premier League assistant using optimization and LLM integration"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Jim Hatton" }
+]
+keywords = ["fpl", "fantasy-premier-league", "optimization", "assistant"]
+
+dependencies = [
+    # Core
+    "httpx>=0.27.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "python-dotenv>=1.0.0",
+
+    # Optimization
+    "pulp>=2.8.0",
+
+    # LLM Integration
+    "litellm>=1.30.0",
+
+    # CLI
+    "typer[all]>=0.12.0",
+    "rich>=13.7.0",
+
+    # Web UI
+    "streamlit>=1.31.0",
+
+    # Database
+    "sqlite-utils>=3.36.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0",
+]
+
+[project.scripts]
+fpl-assistant = "fpl_assistant.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fpl_assistant"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
