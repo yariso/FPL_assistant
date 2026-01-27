@@ -4272,11 +4272,22 @@ def show_rival_analysis():
 
         st.success(f"Loaded **{league_name}** ({len(standings)} managers)")
 
+        # Debug: Show what we're looking for
+        with st.expander("Debug: Manager ID lookup", expanded=False):
+            st.write(f"Looking for manager_id: **{manager_id}** (type: {type(manager_id).__name__})")
+            if standings:
+                sample_ids = [e.manager_id for e in standings[:5]]
+                st.write(f"Sample IDs from standings: {sample_ids}")
+                # Check if user is in there
+                all_ids = [e.manager_id for e in standings]
+                st.write(f"Your ID in list: {manager_id in all_ids}")
+
         # Find your position
         your_entry = next((e for e in standings if e.manager_id == manager_id), None)
 
         if not your_entry:
             st.warning("Your team wasn't found in this league. Check the league ID.")
+            st.info(f"Your Manager ID: {manager_id}. Make sure it matches your FPL account.")
             return
 
         st.markdown("---")
