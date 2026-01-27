@@ -4281,6 +4281,12 @@ def show_rival_analysis():
                 # Check if user is in there
                 all_ids = [e.manager_id for e in standings]
                 st.write(f"Your ID in list: {manager_id in all_ids}")
+                # Search for "Hatton" or "Salah" to find actual ID
+                st.write("---")
+                st.write("**Entries with 'Hatton' or 'Salah' in name:**")
+                for e in standings:
+                    if "hatton" in e.manager_name.lower() or "salah" in e.team_name.lower():
+                        st.write(f"  **ID: {e.manager_id}** - {e.team_name} ({e.manager_name}) - Rank #{e.rank}")
 
         # Find your position
         your_entry = next((e for e in standings if e.manager_id == manager_id), None)
