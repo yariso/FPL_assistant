@@ -53,7 +53,7 @@ def get_manager_id() -> int | None:
     Priority:
     1. Session state (user entered in UI)
     2. Environment/settings
-    3. Default value (1178030)
+    3. Default value (145599)
     """
     # Check session state first (user entered)
     if "manager_id" in st.session_state and st.session_state.manager_id:
@@ -65,7 +65,7 @@ def get_manager_id() -> int | None:
         return settings.fpl.manager_id
 
     # Default value
-    return 1178030
+    return 145599
 
 
 def load_data_from_api(force: bool = False):
@@ -138,7 +138,7 @@ def main():
         st.subheader("Your Team")
 
         # Default to user's stored ID or the preset default
-        default_manager_id = 1178030  # Default ID
+        default_manager_id = 145599  # Default ID
 
         # Get current value from session state or settings or default
         current_manager_id = st.session_state.get("manager_id", default_manager_id)
