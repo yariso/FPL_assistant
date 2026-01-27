@@ -3830,90 +3830,90 @@ def show_performance_tracking():
 
         # Display auto-loaded stats
         if "auto_performance" in st.session_state:
-                auto = st.session_state["auto_performance"]
+            auto = st.session_state["auto_performance"]
 
-                st.markdown("---")
-                st.markdown("### Season Overview")
+            st.markdown("---")
+            st.markdown("### Season Overview")
 
-                col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Gameweeks Played", auto["gameweeks_tracked"])
+            with col2:
+                st.metric("Total Points", f"{auto['total_points']:,}")
+            with col3:
+                st.metric("Avg per Week", f"{auto['avg_points_per_week']:.1f}")
+            with col4:
+                rank_change = auto["rank_improvement"]
+                st.metric("Rank Change",
+                          f"{rank_change:+,}" if rank_change != 0 else "0",
+                          delta_color="normal" if rank_change > 0 else "inverse")
+
+            st.markdown("---")
+            st.markdown("### Rank Progression")
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Starting Rank", f"{auto['starting_rank']:,}")
+            with col2:
+                st.metric("Current Rank", f"{auto['current_rank']:,}")
+            with col3:
+                st.metric("Best Rank", f"{auto['best_rank']:,}")
+
+            st.markdown("---")
+            st.markdown("### Transfer Activity")
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Transfers", auto["total_transfers"])
+            with col2:
+                st.metric("Hits Taken", auto["total_hits"])
+            with col3:
+                st.metric("Hit Cost", f"-{auto['total_hit_cost']} pts")
+
+            # Weekly points chart
+            st.markdown("---")
+            st.markdown("### Weekly Points")
+
+            if auto.get("weekly_points"):
+                import pandas as pd
+
+                weekly_df = pd.DataFrame({
+                    "Gameweek": list(range(1, len(auto["weekly_points"]) + 1)),
+                    "Points": auto["weekly_points"],
+                    "Rank": auto["weekly_ranks"]
+                })
+
+                st.line_chart(weekly_df.set_index("Gameweek")["Points"])
+
+                # Show best/worst weeks
+                best_week = weekly_df.loc[weekly_df["Points"].idxmax()]
+                worst_week = weekly_df.loc[weekly_df["Points"].idxmin()]
+
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Gameweeks Played", auto["gameweeks_tracked"])
+                    st.success(f"🏆 Best Week: GW{int(best_week['Gameweek'])} - {int(best_week['Points'])} pts")
                 with col2:
-                    st.metric("Total Points", f"{auto['total_points']:,}")
-                with col3:
-                    st.metric("Avg per Week", f"{auto['avg_points_per_week']:.1f}")
-                with col4:
-                    rank_change = auto["rank_improvement"]
-                    st.metric("Rank Change",
-                              f"{rank_change:+,}" if rank_change != 0 else "0",
-                              delta_color="normal" if rank_change > 0 else "inverse")
+                    st.error(f"📉 Worst Week: GW{int(worst_week['Gameweek'])} - {int(worst_week['Points'])} pts")
 
-                st.markdown("---")
-                st.markdown("### Rank Progression")
+            st.markdown("---")
+            st.markdown("### Performance Analysis")
 
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Starting Rank", f"{auto['starting_rank']:,}")
-                with col2:
-                    st.metric("Current Rank", f"{auto['current_rank']:,}")
-                with col3:
-                    st.metric("Best Rank", f"{auto['best_rank']:,}")
-
-                st.markdown("---")
-                st.markdown("### Transfer Activity")
-
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Total Transfers", auto["total_transfers"])
-                with col2:
-                    st.metric("Hits Taken", auto["total_hits"])
-                with col3:
-                    st.metric("Hit Cost", f"-{auto['total_hit_cost']} pts")
-
-                # Weekly points chart
-                st.markdown("---")
-                st.markdown("### Weekly Points")
-
-                if auto.get("weekly_points"):
-                    import pandas as pd
-
-                    weekly_df = pd.DataFrame({
-                        "Gameweek": list(range(1, len(auto["weekly_points"]) + 1)),
-                        "Points": auto["weekly_points"],
-                        "Rank": auto["weekly_ranks"]
-                    })
-
-                    st.line_chart(weekly_df.set_index("Gameweek")["Points"])
-
-                    # Show best/worst weeks
-                    best_week = weekly_df.loc[weekly_df["Points"].idxmax()]
-                    worst_week = weekly_df.loc[weekly_df["Points"].idxmin()]
-
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.success(f"🏆 Best Week: GW{int(best_week['Gameweek'])} - {int(best_week['Points'])} pts")
-                    with col2:
-                        st.error(f"📉 Worst Week: GW{int(worst_week['Gameweek'])} - {int(worst_week['Points'])} pts")
-
-                st.markdown("---")
-                st.markdown("### Performance Analysis")
-
-                avg = auto["avg_points_per_week"]
-                if avg >= 55:
-                    st.success(f"🌟 **Elite Performance** - {avg:.1f} pts/week puts you in top tier!")
-                elif avg >= 50:
-                    st.success(f"✅ **Strong Performance** - {avg:.1f} pts/week is above average")
-                elif avg >= 45:
-                    st.info(f"👍 **Decent Performance** - {avg:.1f} pts/week is around average")
-                else:
-                    st.warning(f"⚠️ **Below Average** - {avg:.1f} pts/week needs improvement")
-
-                if auto["rank_improvement"] > 100000:
-                    st.success(f"📈 **Rank Climbing!** Improved {auto['rank_improvement']:,} places this season")
-                elif auto["rank_improvement"] < -100000:
-                    st.warning(f"📉 **Rank Dropping** - Lost {abs(auto['rank_improvement']):,} places")
+            avg = auto["avg_points_per_week"]
+            if avg >= 55:
+                st.success(f"🌟 **Elite Performance** - {avg:.1f} pts/week puts you in top tier!")
+            elif avg >= 50:
+                st.success(f"✅ **Strong Performance** - {avg:.1f} pts/week is above average")
+            elif avg >= 45:
+                st.info(f"👍 **Decent Performance** - {avg:.1f} pts/week is around average")
             else:
-                st.info("Click 'Load Latest Stats' to see your auto-calculated performance.")
+                st.warning(f"⚠️ **Below Average** - {avg:.1f} pts/week needs improvement")
+
+            if auto["rank_improvement"] > 100000:
+                st.success(f"📈 **Rank Climbing!** Improved {auto['rank_improvement']:,} places this season")
+            elif auto["rank_improvement"] < -100000:
+                st.warning(f"📉 **Rank Dropping** - Lost {abs(auto['rank_improvement']):,} places")
+        else:
+            st.info("Click 'Load Latest Stats' to see your auto-calculated performance.")
 
     with tab2:
         st.subheader("Record Gameweek Manually")
