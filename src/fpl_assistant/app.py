@@ -4243,8 +4243,32 @@ def show_rival_analysis():
 
     try:
         with st.spinner("Fetching league standings..."):
-            league_data = client.get_classic_league(league_id)
-            league_name, standings = parse_league_standings(league_data)
+            # Fetch multiple pages to find the user (API returns 50 per page)
+            all_standings = []
+            league_name = ""
+            page = 1
+            max_pages = 10  # Up to 500 managers
+
+            while page <= max_pages:
+                league_data = client.get_classic_league(league_id, page=page)
+                name, page_standings = parse_league_standings(league_data)
+
+                if page == 1:
+                    league_name = name
+
+                if not page_standings:
+                    break  # No more pages
+
+                all_standings.extend(page_standings)
+
+                # Check if we found the user
+                user_found = any(e.manager_id == manager_id for e in all_standings)
+                if user_found:
+                    break
+
+                page += 1
+
+            standings = all_standings
 
         st.success(f"Loaded **{league_name}** ({len(standings)} managers)")
 
