@@ -29,6 +29,13 @@ from .performance_tracker import (
     record_gameweek_performance,
     print_performance_report,
 )
+from .fixture_ticker import (
+    FixtureDetail,
+    FixtureRun,
+    FixtureTicker,
+    get_fdr_color,
+    get_fdr_emoji,
+)
 
 __all__ = [
     "CaptainDifferentialAnalyzer",
@@ -49,4 +56,10 @@ __all__ = [
     "get_performance_tracker",
     "record_gameweek_performance",
     "print_performance_report",
+    # Fixture Ticker
+    "FixtureDetail",
+    "FixtureRun",
+    "FixtureTicker",
+    "get_fdr_color",
+    "get_fdr_emoji",
 ]

@@ -16,12 +16,14 @@ from .endpoints import (
     EVENT_STATUS,
     FIXTURES,
     SET_PIECE_NOTES,
+    get_classic_league_url,
     get_dream_team_url,
     get_element_summary_url,
     get_entry_history_url,
     get_entry_picks_url,
     get_entry_url,
     get_fixtures_url,
+    get_h2h_league_url,
     get_live_event_url,
     get_my_team_url,
 )
@@ -316,6 +318,30 @@ class FPLClient:
         data = await self.get(url)
         return data  # type: ignore
 
+    async def get_classic_league(
+        self, league_id: int, page: int = 1
+    ) -> dict[str, Any]:
+        """
+        Get classic league standings.
+
+        Returns league info, standings with manager details.
+        """
+        url = get_classic_league_url(league_id, page)
+        data = await self.get(url)
+        return data  # type: ignore
+
+    async def get_h2h_league(
+        self, league_id: int, page: int = 1
+    ) -> dict[str, Any]:
+        """
+        Get H2H league standings.
+
+        Returns league info and H2H standings.
+        """
+        url = get_h2h_league_url(league_id, page)
+        data = await self.get(url)
+        return data  # type: ignore
+
     # =========================================================================
     # Authenticated API Methods
     # =========================================================================
@@ -444,3 +470,11 @@ class SyncFPLClient:
     def get_my_team(self, manager_id: int) -> dict[str, Any]:
         """Get user's team (authenticated)."""
         return self._run(self._async_client.get_my_team(manager_id))
+
+    def get_classic_league(self, league_id: int, page: int = 1) -> dict[str, Any]:
+        """Get classic league standings."""
+        return self._run(self._async_client.get_classic_league(league_id, page))
+
+    def get_h2h_league(self, league_id: int, page: int = 1) -> dict[str, Any]:
+        """Get H2H league standings."""
+        return self._run(self._async_client.get_h2h_league(league_id, page))

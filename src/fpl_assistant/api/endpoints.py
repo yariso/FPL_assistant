@@ -58,6 +58,13 @@ DREAM_TEAM = f"{FPL_BASE_URL}/dream-team/{{event_id}}/"
 # Set Piece Notes - Penalty and free kick takers
 SET_PIECE_NOTES = f"{FPL_BASE_URL}/set-piece-notes/"
 
+# Classic League Standings
+# Contains: league standings, manager info, points
+CLASSIC_LEAGUE = f"{FPL_BASE_URL}/leagues-classic/{{league_id}}/standings/"
+
+# H2H League Standings
+H2H_LEAGUE = f"{FPL_BASE_URL}/leagues-h2h/{{league_id}}/standings/"
+
 # =============================================================================
 # Authenticated Endpoints (Require FPL login)
 # =============================================================================
@@ -134,4 +141,20 @@ def get_fixtures_url(event_id: int | None = None, future_only: bool = False) -> 
     if params:
         url += "?" + "&".join(params)
 
+    return url
+
+
+def get_classic_league_url(league_id: int, page: int = 1) -> str:
+    """Get URL for classic league standings."""
+    url = CLASSIC_LEAGUE.format(league_id=league_id)
+    if page > 1:
+        url += f"?page_standings={page}"
+    return url
+
+
+def get_h2h_league_url(league_id: int, page: int = 1) -> str:
+    """Get URL for H2H league standings."""
+    url = H2H_LEAGUE.format(league_id=league_id)
+    if page > 1:
+        url += f"?page_standings={page}"
     return url

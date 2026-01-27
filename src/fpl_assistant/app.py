@@ -107,7 +107,7 @@ def main():
         # Navigation - WEEKLY ADVICE is the main page
         page = st.radio(
             "Navigation",
-            ["📋 Weekly Advice", "🏆 Best Squad", "👤 My Team", "🔍 Scout Tips", "👥 Players", "📊 Backtest", "📈 Performance"],
+            ["📋 Weekly Advice", "🏆 Best Squad", "👤 My Team", "🔍 Scout Tips", "📆 Fixtures", "🎯 Rivals", "👥 Players", "📊 Backtest", "📈 Performance"],
             label_visibility="collapsed",
         )
 
@@ -161,6 +161,10 @@ def main():
         show_my_team()
     elif page == "🔍 Scout Tips":
         show_scout_tips()
+    elif page == "📆 Fixtures":
+        show_fixture_ticker()
+    elif page == "🎯 Rivals":
+        show_rival_analysis()
     elif page == "👥 Players":
         show_players()
     elif page == "📊 Backtest":
@@ -1682,6 +1686,90 @@ def show_weekly_advice():
     else:
         st.success("✅ Your team looks good! No urgent transfers needed.")
 
+    # Hit Calculator - manual comparison tool
+    with st.expander("🧮 Hit Calculator - Compare Any Two Players", expanded=False):
+        st.markdown("*Manually calculate if a -4 hit is worth it for any transfer*")
+
+        from fpl_assistant.predictions.transfers import calculate_hit_value
+
+        col1, col2 = st.columns(2)
+
+        # Get player lists for dropdowns
+        available_to_sell = [p for p in players if p.id in my_player_ids]
+        available_to_buy = [p for p in players if p.id not in my_player_ids and p.status == PlayerStatus.AVAILABLE]
+
+        available_to_sell.sort(key=lambda p: p.web_name)
+        available_to_buy.sort(key=lambda p: -projections.get(p.id, 0))
+
+        with col1:
+            st.markdown("**Player OUT**")
+            out_options = {f"{p.web_name} ({p.position_name}, £{p.price:.1f}m)": p.id for p in available_to_sell}
+            selected_out = st.selectbox("Sell", list(out_options.keys()), key="hit_calc_out")
+            out_id = out_options.get(selected_out)
+
+        with col2:
+            st.markdown("**Player IN**")
+            # Filter to same position if out player selected
+            out_player = player_dict.get(out_id)
+            if out_player:
+                available_to_buy_filtered = [p for p in available_to_buy if p.position == out_player.position]
+            else:
+                available_to_buy_filtered = available_to_buy
+
+            in_options = {f"{p.web_name} ({p.position_name}, £{p.price:.1f}m)": p.id for p in available_to_buy_filtered[:50]}
+            selected_in = st.selectbox("Buy", list(in_options.keys()), key="hit_calc_in")
+            in_id = in_options.get(selected_in)
+
+        weeks_horizon = st.slider("Planning horizon (weeks)", 1, 8, 5, help="How many weeks to project the value over")
+
+        if out_id and in_id and st.button("📊 Analyze Hit", key="analyze_hit"):
+            out_player = player_dict.get(out_id)
+            in_player = player_dict.get(in_id)
+
+            if out_player and in_player:
+                # Calculate multi-week projections
+                out_total_xp = 0
+                in_total_xp = 0
+
+                for w in range(weeks_horizon):
+                    future_gw = gw + w
+                    try:
+                        out_total_xp += engine.project_single_player(out_player, future_gw)
+                        in_total_xp += engine.project_single_player(in_player, future_gw)
+                    except:
+                        out_total_xp += out_player.points_per_game
+                        in_total_xp += in_player.points_per_game
+
+                # Get hit analysis
+                analysis = calculate_hit_value(
+                    out_player, in_player, out_total_xp, in_total_xp, weeks_horizon
+                )
+
+                st.markdown("---")
+                st.markdown("### Hit Analysis Results")
+
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(f"{out_player.web_name} Total xP", f"{out_total_xp:.1f}")
+                with col2:
+                    st.metric(f"{in_player.web_name} Total xP", f"{in_total_xp:.1f}")
+                with col3:
+                    color = "normal" if analysis.net_gain > 0 else "inverse"
+                    st.metric("Net Gain (after -4)", f"{analysis.net_gain:.1f}", delta_color=color)
+
+                # Recommendation
+                st.markdown("---")
+                if analysis.recommendation.value == "TAKE HIT":
+                    st.success(f"✅ **{analysis.recommendation.value}** - {analysis.explanation}")
+                    if analysis.break_even_weeks:
+                        st.caption(f"Break-even: {analysis.break_even_weeks:.1f} weeks | Confidence: {analysis.confidence}")
+                elif analysis.recommendation.value == "AVOID HIT":
+                    st.error(f"❌ **{analysis.recommendation.value}** - {analysis.explanation}")
+                else:
+                    st.warning(f"⚠️ **{analysis.recommendation.value}** - {analysis.explanation}")
+                    if analysis.break_even_weeks:
+                        st.caption(f"Break-even: {analysis.break_even_weeks:.1f} weeks | Confidence: {analysis.confidence}")
+
     st.markdown("---")
 
     # ===========================================
@@ -1781,15 +1869,14 @@ def show_weekly_advice():
     double_gws = [g for g in upcoming_gws if g.is_double]
     blank_gws = [g for g in upcoming_gws if g.is_blank]
 
+    # Show blank/double alerts (these are important regardless of chip analysis)
     if double_gws:
         st.success(f"🔥 **Double Gameweek {double_gws[0].id} coming!** Consider Bench Boost or Triple Captain")
-    elif blank_gws:
+    if blank_gws:
         st.warning(f"⚠️ **Blank Gameweek {blank_gws[0].id} coming!** Consider Free Hit")
-    else:
-        st.info("No special gameweeks in the next 6 weeks. Save your chips.")
 
-    # Detailed chip analysis
-    with st.expander("📊 Detailed Chip Analysis", expanded=False):
+    # Detailed chip analysis - this runs the optimizer and gives actual recommendations
+    with st.expander("📊 Detailed Chip Analysis", expanded=True):
         try:
             from fpl_assistant.optimizer.chips import ChipOptimizer
             from fpl_assistant.data.models import ChipType, Squad, SquadPlayer
@@ -1920,9 +2007,221 @@ def show_weekly_advice():
     st.markdown("---")
 
     # ===========================================
-    # 5. LOOK AHEAD
+    # 5. COMPARE MY TEAM VS BEST SQUAD
     # ===========================================
-    st.header("🔮 5. PLANNING AHEAD")
+    st.header("🔄 5. SQUAD COMPARISON - Do I Need a Wildcard?")
+    st.caption("Compares your current squad to the mathematically optimal squad with the same budget")
+
+    with st.expander("My Team vs Optimal Squad (5-week projection)", expanded=True):
+        try:
+            from fpl_assistant.optimizer.model import FPLOptimizer
+            from fpl_assistant.predictions.enhanced_weights import (
+                EnhancedSignalCalculator,
+                convert_signals_to_projection,
+                get_enhanced_weights,
+            )
+            from fpl_assistant.predictions.weight_optimizer import WeightOptimizer
+
+            # Calculate total budget from current team
+            my_team_value = sum(player_dict[pick["element"]].price for pick in picks if pick["element"] in player_dict)
+            total_budget = my_team_value + bank
+
+            # Get current team player IDs
+            my_team_ids = {pick["element"] for pick in picks}
+
+            # Use the SAME projection logic as Best Squad builder (Enhanced Signals + Price Floors)
+            horizon = 5
+            multi_gw_projections = {}
+
+            # Initialize enhanced signal calculator (same as Best Squad)
+            signal_calculator = EnhancedSignalCalculator(players, teams, fixtures)
+            optimized_weights = WeightOptimizer.load_optimized_weights()
+            weights_to_use = optimized_weights if optimized_weights else get_enhanced_weights()
+
+            # Filter to available players with minimum minutes
+            min_minutes = 180
+            eligible_players = [p for p in players if p.status == PlayerStatus.AVAILABLE and p.minutes >= min_minutes]
+
+            for p in eligible_players:
+                total_xp = 0.0
+
+                for i in range(horizon):
+                    try:
+                        # Use enhanced signals (same as Best Squad)
+                        signals = signal_calculator.calculate_signals(p, gw + i)
+                        enhanced_xp = convert_signals_to_projection(signals, weights_to_use, horizon=1)
+                        total_xp += enhanced_xp
+                    except:
+                        total_xp += p.form * 2
+
+                # Apply position-specific price floors with team strength (SAME as Best Squad)
+                team_attack = engine._team_attack_strength.get(p.team_id, 1.0)
+                team_defense = engine._team_defense_strength.get(p.team_id, 1.0)
+
+                if p.position == Position.FWD:
+                    base_ppg = 0.35 * p.price + 1.25
+                    price_based_ppg = base_ppg * min(1.3, max(0.7, team_attack))
+                elif p.position == Position.MID:
+                    base_ppg = 0.40 * p.price + 0.8
+                    team_factor = (team_attack * 0.8 + team_defense * 0.2)
+                    price_based_ppg = base_ppg * min(1.3, max(0.7, team_factor))
+                elif p.position == Position.DEF:
+                    base_ppg = 0.35 * p.price + 1.5
+                    team_factor = (team_defense * 0.7 + team_attack * 0.3)
+                    price_based_ppg = base_ppg * min(1.3, max(0.7, team_factor))
+                else:  # GK
+                    base_ppg = 0.50 * p.price + 1.25
+                    price_based_ppg = base_ppg * min(1.3, max(0.7, team_defense))
+
+                price_based_xp = price_based_ppg * horizon
+                total_xp = max(total_xp, price_based_xp)
+
+                multi_gw_projections[p.id] = total_xp
+
+            # Run optimizer to get best squad with same budget
+            optimizer = FPLOptimizer(solver_time_limit=30)
+
+            # Build players dict for optimizer (only eligible players)
+            players_dict_opt = {p.id: p for p in eligible_players}
+
+            # Run optimization (builds from scratch when current_squad=None)
+            week_plan = optimizer.optimize_single_week(
+                players=players_dict_opt,
+                projections=multi_gw_projections,
+                current_squad=None,  # Fresh optimization
+                budget=total_budget,
+            )
+
+            if week_plan:
+                # Get best squad player IDs from the WeekPlan (starting_xi + bench_order)
+                best_squad_ids = set(week_plan.starting_xi + week_plan.bench_order)
+
+                # Calculate comparison
+                players_to_keep = my_team_ids & best_squad_ids
+                players_to_sell = my_team_ids - best_squad_ids
+                players_to_buy = best_squad_ids - my_team_ids
+
+                # Calculate xP totals
+                my_team_xp = sum(multi_gw_projections.get(pid, 0) for pid in my_team_ids)
+                best_squad_xp = sum(multi_gw_projections.get(pid, 0) for pid in best_squad_ids)
+                xp_gain = best_squad_xp - my_team_xp
+
+                # Summary metrics
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Your Team xP", f"{my_team_xp:.1f}", help=f"Over {horizon} GWs")
+                with col2:
+                    st.metric("Best Squad xP", f"{best_squad_xp:.1f}", help=f"Over {horizon} GWs")
+                with col3:
+                    delta_color = "normal" if xp_gain > 0 else "inverse"
+                    st.metric("Potential Gain", f"+{xp_gain:.1f}" if xp_gain > 0 else f"{xp_gain:.1f}")
+                with col4:
+                    st.metric("Changes Needed", len(players_to_sell))
+
+                st.markdown("---")
+
+                # Recommendation based on number of changes
+                if len(players_to_sell) == 0:
+                    st.success("✅ **Your team IS the optimal squad!** No changes needed.")
+                elif len(players_to_sell) <= 2:
+                    st.info(f"🔄 **{len(players_to_sell)} transfers needed** - Use free transfers over next few weeks")
+                elif len(players_to_sell) <= 4:
+                    st.warning(f"⚠️ **{len(players_to_sell)} transfers needed** - Consider taking hits or saving WC")
+                else:
+                    st.error(f"🔥 **{len(players_to_sell)} transfers needed** - WILDCARD recommended!")
+
+                # Show players to keep
+                if players_to_keep:
+                    st.markdown(f"### ✅ Keep ({len(players_to_keep)} players)")
+                    keep_data = []
+                    for pid in players_to_keep:
+                        p = player_dict.get(pid)
+                        if p:
+                            team = teams_dict.get(p.team_id)
+                            keep_data.append({
+                                "Pos": p.position_name,
+                                "Player": p.web_name,
+                                "Team": team.short_name if team else "?",
+                                "Price": f"£{p.price:.1f}m",
+                                "xP (5GW)": f"{multi_gw_projections.get(pid, 0):.1f}",
+                            })
+                    keep_data.sort(key=lambda x: -float(x["xP (5GW)"]))
+                    st.dataframe(keep_data, use_container_width=True, hide_index=True)
+
+                # Show players to sell
+                if players_to_sell:
+                    st.markdown(f"### 🔴 Sell ({len(players_to_sell)} players)")
+                    sell_data = []
+                    for pid in players_to_sell:
+                        p = player_dict.get(pid)
+                        if p:
+                            team = teams_dict.get(p.team_id)
+                            sell_data.append({
+                                "Pos": p.position_name,
+                                "Player": p.web_name,
+                                "Team": team.short_name if team else "?",
+                                "Price": f"£{p.price:.1f}m",
+                                "xP (5GW)": f"{multi_gw_projections.get(pid, 0):.1f}",
+                            })
+                    sell_data.sort(key=lambda x: float(x["xP (5GW)"]))  # Worst first
+                    st.dataframe(sell_data, use_container_width=True, hide_index=True)
+
+                # Show players to buy
+                if players_to_buy:
+                    st.markdown(f"### 🟢 Buy ({len(players_to_buy)} players)")
+                    buy_data = []
+                    for pid in players_to_buy:
+                        p = player_dict.get(pid)
+                        if p:
+                            team = teams_dict.get(p.team_id)
+                            buy_data.append({
+                                "Pos": p.position_name,
+                                "Player": p.web_name,
+                                "Team": team.short_name if team else "?",
+                                "Price": f"£{p.price:.1f}m",
+                                "xP (5GW)": f"{multi_gw_projections.get(pid, 0):.1f}",
+                            })
+                    buy_data.sort(key=lambda x: -float(x["xP (5GW)"]))  # Best first
+                    st.dataframe(buy_data, use_container_width=True, hide_index=True)
+
+                # Position-by-position comparison
+                st.markdown("---")
+                st.markdown("### 📊 Position-by-Position Comparison")
+
+                for pos_name, pos_val in [("GK", 1), ("DEF", 2), ("MID", 3), ("FWD", 4)]:
+                    my_pos = [player_dict[pid] for pid in my_team_ids if player_dict.get(pid) and player_dict[pid].position.value == pos_val]
+                    best_pos = [player_dict[pid] for pid in best_squad_ids if player_dict.get(pid) and player_dict[pid].position.value == pos_val]
+
+                    my_names = sorted([p.web_name for p in my_pos])
+                    best_names = sorted([p.web_name for p in best_pos])
+
+                    if my_names == best_names:
+                        st.markdown(f"**{pos_name}:** ✅ Same")
+                    else:
+                        my_only = set(p.web_name for p in my_pos) - set(p.web_name for p in best_pos)
+                        best_only = set(p.web_name for p in best_pos) - set(p.web_name for p in my_pos)
+                        if my_only or best_only:
+                            changes = []
+                            if my_only:
+                                changes.append(f"OUT: {', '.join(my_only)}")
+                            if best_only:
+                                changes.append(f"IN: {', '.join(best_only)}")
+                            st.markdown(f"**{pos_name}:** {' → '.join(changes)}")
+
+            else:
+                st.warning("Could not generate optimal squad for comparison")
+
+        except Exception as e:
+            st.caption(f"Squad comparison not available: {e}")
+            import traceback
+            st.caption(traceback.format_exc())
+
+    st.markdown("---")
+
+    # ===========================================
+    # 6. LOOK AHEAD
+    # ===========================================
+    st.header("🔮 6. PLANNING AHEAD")
 
     # Show next 5 GW fixtures for top players
     st.markdown("**Best fixtures next 5 weeks:**")
@@ -1957,7 +2256,7 @@ def show_weekly_advice():
     # ===========================================
     # 6. MODEL PERFORMANCE - Backtest & Accuracy
     # ===========================================
-    st.header("📊 6. MODEL ACCURACY")
+    st.header("📊 7. MODEL ACCURACY")
     st.caption("*How accurate are our predictions? Run a backtest to find out.*")
 
     with st.expander("🔬 Backtest & Weight Optimization", expanded=False):
@@ -2042,6 +2341,82 @@ def show_weekly_advice():
                             st.info("Current weights are already optimal (no improvement found).")
                     except Exception as e:
                         st.error(f"Optimization failed: {e}")
+
+    st.markdown("---")
+
+    # ===========================================
+    # 8. xG REGRESSION WATCH
+    # ===========================================
+    st.header("📈 8. xG REGRESSION WATCH")
+    st.caption("*Players over/under-performing their expected stats - due for regression*")
+
+    with st.expander("🎯 Regression Analysis", expanded=False):
+        try:
+            from fpl_assistant.predictions.regression import (
+                RegressionAnalyzer,
+                RegressionType,
+            )
+
+            analyzer = RegressionAnalyzer(players)
+            buy_targets = analyzer.get_buy_targets(10)
+            sell_targets = analyzer.get_sell_targets(10)
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("### 🟢 Buy Targets (Due a Haul)")
+                st.markdown("*Underperforming xG - likely to score soon*")
+
+                if buy_targets:
+                    import pandas as pd
+                    buy_data = []
+                    for candidate in buy_targets:
+                        p = candidate.player
+                        team = teams_dict.get(p.team_id)
+                        buy_data.append({
+                            "Player": p.web_name,
+                            "Team": team.short_name if team else "?",
+                            "Price": f"£{p.price:.1f}m",
+                            "Goals": candidate.goals,
+                            "xG": f"{candidate.expected_goals:.1f}",
+                            "Diff": f"{candidate.goals_diff:+.1f}",
+                        })
+                    st.dataframe(pd.DataFrame(buy_data), use_container_width=True, hide_index=True)
+                else:
+                    st.info("No clear buy targets based on xG regression")
+
+            with col2:
+                st.markdown("### 🔴 Sell Targets (Due to Blank)")
+                st.markdown("*Overperforming xG - returns may decline*")
+
+                if sell_targets:
+                    import pandas as pd
+                    sell_data = []
+                    for candidate in sell_targets:
+                        p = candidate.player
+                        team = teams_dict.get(p.team_id)
+                        sell_data.append({
+                            "Player": p.web_name,
+                            "Team": team.short_name if team else "?",
+                            "Price": f"£{p.price:.1f}m",
+                            "Goals": candidate.goals,
+                            "xG": f"{candidate.expected_goals:.1f}",
+                            "Diff": f"{candidate.goals_diff:+.1f}",
+                        })
+                    st.dataframe(pd.DataFrame(sell_data), use_container_width=True, hide_index=True)
+                else:
+                    st.info("No clear sell targets based on xG regression")
+
+            st.markdown("---")
+            st.markdown("""
+            **How to use:**
+            - **Buy targets** have fewer goals than expected (xG) - they're "due" for goals
+            - **Sell targets** have more goals than expected - their scoring rate may decline
+            - Negative diff = underperforming, Positive diff = overperforming
+            """)
+
+        except Exception as e:
+            st.error(f"Failed to run regression analysis: {e}")
 
 
 def show_best_squad():
@@ -3688,6 +4063,298 @@ def show_performance_tracking():
         st.markdown("---")
         with st.expander("📄 Full Text Report"):
             st.code(tracker.print_report())
+
+
+def show_fixture_ticker():
+    """Show fixture difficulty ticker for all teams."""
+    st.title("📆 Fixture Ticker")
+    st.markdown("*Plan your transfers by targeting teams with favorable fixture runs.*")
+
+    db = get_db()
+    if db.get_player_count() == 0:
+        st.warning("No data loaded. Click 'Update' in the sidebar first.")
+        return
+
+    players = db.get_all_players()
+    teams = db.get_all_teams()
+    fixtures = db.get_all_fixtures()
+    gameweeks = [db.get_gameweek(i) for i in range(1, 39) if db.get_gameweek(i)]
+    current_gw = db.get_current_gameweek()
+    start_gw = current_gw.id if current_gw else 1
+
+    from fpl_assistant.analysis.fixture_ticker import FixtureTicker, get_fdr_color, get_fdr_emoji
+
+    ticker = FixtureTicker(teams, fixtures, gameweeks)
+
+    # Settings
+    col1, col2 = st.columns(2)
+    with col1:
+        num_weeks = st.slider("Weeks to show", 4, 10, 6)
+    with col2:
+        start_gw = st.number_input("Starting GW", min_value=1, max_value=38, value=start_gw)
+
+    # Get all team runs
+    runs = ticker.get_all_team_runs(start_gw, num_weeks)
+
+    st.markdown("---")
+
+    # Summary metrics
+    st.subheader("Best Fixture Runs")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**🎯 Best for Attacking (FWD/MID)**")
+        best_attack = ticker.get_best_attack_fixtures(start_gw, num_weeks, 5)
+        for run in best_attack:
+            fdr_str = " ".join([get_fdr_emoji(f.fdr) if not f.is_blank else "⬜" for f in run.fixtures[:6]])
+            st.markdown(f"**{run.team_short_name}** ({run.avg_fdr:.1f} avg): {fdr_str}")
+
+    with col2:
+        st.markdown("**🛡️ Best for Clean Sheets (GK/DEF)**")
+        best_defense = ticker.get_best_defense_fixtures(start_gw, num_weeks, 5)
+        for run in best_defense:
+            fdr_str = " ".join([get_fdr_emoji(f.fdr) if not f.is_blank else "⬜" for f in run.fixtures[:6]])
+            st.markdown(f"**{run.team_short_name}** ({run.avg_fdr:.1f} avg): {fdr_str}")
+
+    # Blank/Double alerts
+    blanks = ticker.get_teams_with_blanks(start_gw, num_weeks)
+    doubles = ticker.get_teams_with_doubles(start_gw, num_weeks)
+
+    if blanks or doubles:
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            if blanks:
+                st.warning(f"⚠️ **{len(blanks)} teams have BLANK gameweeks**")
+                for run in blanks:
+                    blank_gws = [f.gameweek for f in run.fixtures if f.is_blank]
+                    st.write(f"• {run.team_name}: GW {', GW '.join(map(str, blank_gws))}")
+        with col2:
+            if doubles:
+                st.success(f"🔥 **{len(doubles)} teams have DOUBLE gameweeks**")
+                for run in doubles:
+                    double_gws = [f.gameweek for f in run.fixtures if f.is_double]
+                    st.write(f"• {run.team_name}: GW {', GW '.join(map(str, set(double_gws)))}")
+
+    # Full fixture grid
+    st.markdown("---")
+    st.subheader("Full Fixture Grid")
+    st.markdown("*🟢 Easy | 🟨 Medium | 🔴 Hard | ⬜ Blank*")
+
+    # Build data for display
+    import pandas as pd
+
+    data = []
+    for run in runs:
+        row = {"Team": run.team_short_name, "Avg FDR": f"{run.avg_fdr:.1f}"}
+        for i, fix in enumerate(run.fixtures[:num_weeks]):
+            gw_num = start_gw + i
+            if fix.is_blank:
+                row[f"GW{gw_num}"] = "BLANK"
+            else:
+                venue = "H" if fix.is_home else "a"
+                double_marker = "x2" if fix.is_double else ""
+                row[f"GW{gw_num}"] = f"{fix.opponent_name}({venue}) {double_marker}"
+        data.append(row)
+
+    df = pd.DataFrame(data)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+
+    # Legend
+    with st.expander("FDR Legend"):
+        st.markdown("""
+        - **FDR 1-2** 🟢🟩: Easy fixtures - good for attacking returns and clean sheets
+        - **FDR 3** 🟨: Medium fixtures - balanced risk/reward
+        - **FDR 4-5** 🟧🔴: Hard fixtures - difficult for points
+        - **(H)** = Home, **(a)** = Away
+        - **x2** = Double gameweek (two fixtures)
+        """)
+
+
+def show_rival_analysis():
+    """Show mini-league rival tracking and analysis."""
+    st.title("🎯 Mini-League Rival Analysis")
+    st.markdown("*Track your rivals and find differential picks to climb the league.*")
+
+    db = get_db()
+    if db.get_player_count() == 0:
+        st.warning("No data loaded. Click 'Update' in the sidebar first.")
+        return
+
+    settings = get_settings()
+    manager_id = settings.fpl.manager_id
+
+    if not manager_id:
+        st.error("Add FPL_MANAGER_ID to your .env file to use rival tracking.")
+        return
+
+    # Get league ID from user
+    league_id = st.text_input(
+        "Enter your mini-league ID",
+        help="Find this in the URL when viewing your league on the FPL website: fantasy.premierleague.com/leagues/[ID]/standings"
+    )
+
+    if not league_id:
+        st.info("Enter a mini-league ID to analyze your rivals.")
+        return
+
+    try:
+        league_id = int(league_id)
+    except ValueError:
+        st.error("League ID must be a number")
+        return
+
+    # Fetch league data
+    from fpl_assistant.api import SyncFPLClient
+    from fpl_assistant.predictions.rivals import (
+        RivalTracker, parse_league_standings, parse_rival_team,
+        RivalStrategy
+    )
+
+    client = SyncFPLClient()
+
+    try:
+        with st.spinner("Fetching league standings..."):
+            league_data = client.get_classic_league(league_id)
+            league_name, standings = parse_league_standings(league_data)
+
+        st.success(f"Loaded **{league_name}** ({len(standings)} managers)")
+
+        # Find your position
+        your_entry = next((e for e in standings if e.manager_id == manager_id), None)
+
+        if not your_entry:
+            st.warning("Your team wasn't found in this league. Check the league ID.")
+            return
+
+        st.markdown("---")
+        st.subheader(f"Your Position: #{your_entry.rank}")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Points", your_entry.total_points)
+        with col2:
+            st.metric("GW Points", your_entry.gameweek_points)
+        with col3:
+            gap_to_first = standings[0].total_points - your_entry.total_points if standings else 0
+            st.metric("Gap to 1st", f"-{gap_to_first}" if gap_to_first > 0 else "Leading!")
+
+        # Get current GW
+        current_gw = db.get_current_gameweek()
+        gw = current_gw.id if current_gw else 1
+
+        # Fetch rival teams (top 5 + those near you)
+        rivals_to_fetch = []
+        for entry in standings[:5]:
+            if entry.manager_id != manager_id:
+                rivals_to_fetch.append(entry)
+
+        # Also add rivals within 50 points
+        for entry in standings:
+            if entry.manager_id != manager_id:
+                gap = abs(your_entry.total_points - entry.total_points)
+                if gap <= 50 and entry not in rivals_to_fetch:
+                    rivals_to_fetch.append(entry)
+
+        rivals_to_fetch = rivals_to_fetch[:10]  # Limit to 10
+
+        # Fetch each rival's team
+        st.markdown("---")
+        st.subheader("Rival Analysis")
+
+        rival_teams = {}
+        with st.spinner("Fetching rival teams..."):
+            for rival in rivals_to_fetch:
+                try:
+                    picks_data = client.get_entry_picks(rival.manager_id, gw)
+                    rival_team = parse_rival_team(picks_data)
+                    rival_team.manager_id = rival.manager_id
+                    rival_teams[rival.manager_id] = rival_team
+                except Exception:
+                    pass  # Skip if can't fetch
+
+        # Get your team
+        if "my_team" in st.session_state and st.session_state.my_team:
+            my_team = st.session_state.my_team
+            your_player_ids = [p.player_id for p in my_team.players]
+        else:
+            st.warning("Load your team first (from Weekly Advice page)")
+            return
+
+        # Analyze rivals
+        players = db.get_all_players()
+        player_dict = {p.id: p for p in players}
+
+        tracker = RivalTracker(player_dict)
+
+        # Show rival comparisons
+        for rival in rivals_to_fetch:
+            if rival.manager_id not in rival_teams:
+                continue
+
+            rival_team = rival_teams[rival.manager_id]
+            analysis = tracker.analyze_rival(rival, rival_team, your_player_ids, your_entry.total_points)
+
+            with st.expander(f"**{rival.team_name}** (#{rival.rank}) - {rival.manager_name}", expanded=rival.rank <= 3):
+                col1, col2 = st.columns(2)
+                with col1:
+                    gap_str = f"+{analysis.points_gap}" if analysis.points_gap > 0 else str(analysis.points_gap)
+                    st.metric("Points Gap", gap_str)
+                    st.metric("Overlap", f"{analysis.overlap_percentage:.0f}%")
+
+                with col2:
+                    st.metric("Common Players", len(analysis.common_players))
+                    if analysis.recommended_strategy == RivalStrategy.MATCH:
+                        st.warning(f"Strategy: **{analysis.recommended_strategy.value}**")
+                    elif analysis.recommended_strategy == RivalStrategy.DIFFERENTIATE:
+                        st.success(f"Strategy: **{analysis.recommended_strategy.value}**")
+                    else:
+                        st.info(f"Strategy: **{analysis.recommended_strategy.value}**")
+
+                # Show their differentials (players they have that you don't)
+                if analysis.their_differentials:
+                    st.markdown("**They have (you don't):**")
+                    diff_names = [player_dict[pid].web_name for pid in analysis.their_differentials[:5] if pid in player_dict]
+                    st.write(", ".join(diff_names))
+
+                # Show your differentials (players you have that they don't)
+                if analysis.your_differentials:
+                    st.markdown("**You have (they don't):**")
+                    diff_names = [player_dict[pid].web_name for pid in analysis.your_differentials[:5] if pid in player_dict]
+                    st.write(", ".join(diff_names))
+
+        # Differential targets
+        st.markdown("---")
+        st.subheader("Differential Pick Targets")
+        st.markdown("*High xP players your rivals don't own - great for gaining ground*")
+
+        from fpl_assistant.predictions import ProjectionEngine
+        engine = ProjectionEngine(players, db.get_all_teams(), db.get_all_fixtures())
+        projections = {p.id: engine.project_player(p, gw).expected_points for p in players}
+
+        tracker_with_projs = RivalTracker(player_dict, projections)
+        differentials = tracker_with_projs._find_differential_targets(
+            your_player_ids, rival_teams, manager_id
+        )
+
+        if differentials:
+            import pandas as pd
+            diff_data = []
+            for diff in differentials[:10]:
+                diff_data.append({
+                    "Player": diff.player.web_name,
+                    "Price": f"£{diff.player.price:.1f}m",
+                    "xP": f"{diff.projected_points:.1f}",
+                    "Rival Own%": f"{diff.ownership_in_league:.0f}%",
+                    "Score": f"{diff.differential_score:.1f}",
+                })
+            st.dataframe(pd.DataFrame(diff_data), use_container_width=True, hide_index=True)
+        else:
+            st.info("No clear differential targets found")
+
+    except Exception as e:
+        st.error(f"Failed to fetch league data: {e}")
+    finally:
+        client.close()
 
 
 if __name__ == "__main__":

@@ -87,6 +87,32 @@ from .weight_optimizer import (
     WeightOptimizer,
     create_backtest_function,
 )
+from .transfers import (
+    HitAnalysis,
+    HitCalculator,
+    HitRecommendation,
+    calculate_hit_value,
+)
+from .regression import (
+    RegressionAnalyzer,
+    RegressionCandidate,
+    RegressionType,
+    get_regression_candidates,
+    identify_regression_buys,
+    identify_regression_sells,
+)
+from .rivals import (
+    CaptainRiskMatrix,
+    DifferentialPick,
+    LeagueAnalysis,
+    RivalAnalysis,
+    RivalEntry,
+    RivalStrategy,
+    RivalTeam,
+    RivalTracker,
+    parse_league_standings,
+    parse_rival_team,
+)
 
 __all__ = [
     # Projection Engine
@@ -155,4 +181,27 @@ __all__ = [
     # Weight Optimizer
     "WeightOptimizer",
     "create_backtest_function",
+    # Transfer Hit Calculator
+    "HitAnalysis",
+    "HitCalculator",
+    "HitRecommendation",
+    "calculate_hit_value",
+    # xG Regression Analysis
+    "RegressionAnalyzer",
+    "RegressionCandidate",
+    "RegressionType",
+    "get_regression_candidates",
+    "identify_regression_buys",
+    "identify_regression_sells",
+    # Mini-League Rival Tracking
+    "CaptainRiskMatrix",
+    "DifferentialPick",
+    "LeagueAnalysis",
+    "RivalAnalysis",
+    "RivalEntry",
+    "RivalStrategy",
+    "RivalTeam",
+    "RivalTracker",
+    "parse_league_standings",
+    "parse_rival_team",
 ]
