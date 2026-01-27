@@ -4275,7 +4275,8 @@ def show_rival_analysis():
         # Get your team
         if "my_team" in st.session_state and st.session_state.my_team:
             my_team = st.session_state.my_team
-            your_player_ids = [p.player_id for p in my_team.players]
+            picks = my_team.get("picks", [])
+            your_player_ids = [p["element"] for p in picks]
         else:
             st.warning("Load your team first (from Weekly Advice page)")
             return
