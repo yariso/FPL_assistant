@@ -4330,7 +4330,7 @@ def show_rival_analysis():
 
         from fpl_assistant.predictions import ProjectionEngine
         engine = ProjectionEngine(players, db.get_all_teams(), db.get_all_fixtures())
-        projections = {p.id: engine.project_player(p, gw).expected_points for p in players}
+        projections = {p.id: engine.project_single_player(p, gw) for p in players}
 
         tracker_with_projs = RivalTracker(player_dict, projections)
         differentials = tracker_with_projs._find_differential_targets(
