@@ -47,6 +47,27 @@ def get_db():
     return get_database(get_data_dir() / "fpl.db")
 
 
+def get_manager_id() -> int | None:
+    """Get manager ID from session state, settings, or default.
+
+    Priority:
+    1. Session state (user entered in UI)
+    2. Environment/settings
+    3. Default value (1178030)
+    """
+    # Check session state first (user entered)
+    if "manager_id" in st.session_state and st.session_state.manager_id:
+        return st.session_state.manager_id
+
+    # Fall back to settings/environment
+    settings = get_settings()
+    if settings.fpl.manager_id > 0:
+        return settings.fpl.manager_id
+
+    # Default value
+    return 1178030
+
+
 def load_data_from_api(force: bool = False):
     """Load data from FPL API."""
     cache = get_cache()
@@ -113,6 +134,35 @@ def main():
 
         st.markdown("---")
 
+        # Manager ID input - allows users to enter their own ID
+        st.subheader("Your Team")
+
+        # Default to user's stored ID or the preset default
+        default_manager_id = 1178030  # Default ID
+
+        # Get current value from session state or settings or default
+        current_manager_id = st.session_state.get("manager_id", default_manager_id)
+
+        # Input field for manager ID
+        new_manager_id = st.number_input(
+            "FPL Manager ID",
+            min_value=1,
+            value=current_manager_id,
+            help="Find your ID at fantasy.premierleague.com/entry/[YOUR_ID]/history",
+            key="manager_id_input"
+        )
+
+        # Update session state if changed
+        if new_manager_id != st.session_state.get("manager_id"):
+            st.session_state.manager_id = new_manager_id
+            # Clear cached team data when ID changes
+            if "my_team" in st.session_state:
+                del st.session_state.my_team
+            if "fetch_debug" in st.session_state:
+                del st.session_state.fetch_debug
+
+        st.markdown("---")
+
         # Data refresh
         st.subheader("Data")
         col1, col2 = st.columns(2)
@@ -134,8 +184,7 @@ def main():
         # Refresh My Team button - to get latest picks from FPL
         if "my_team" in st.session_state and st.session_state.my_team:
             if st.button("🔄 Refresh My Team", use_container_width=True, help="Re-fetch your team picks from FPL"):
-                settings = get_settings()
-                mgr_id = settings.fpl.manager_id
+                mgr_id = get_manager_id()
                 if mgr_id:
                     fetch_my_team(mgr_id)
                     st.rerun()
@@ -182,8 +231,7 @@ def show_weekly_advice():
         st.warning("No data loaded. Click 'Update' in the sidebar first.")
         return
 
-    settings = get_settings()
-    manager_id = settings.fpl.manager_id
+    manager_id = get_manager_id()
 
     # Show any previous errors
     if "fetch_error" in st.session_state:
@@ -210,13 +258,10 @@ def show_weekly_advice():
 
     # Check if team is loaded
     if "my_team" not in st.session_state or not st.session_state.my_team:
-        if manager_id:
-            st.info("👆 First, let's load your team to give personalized advice.")
-            if st.button("🔄 Load My Team", type="primary"):
-                fetch_my_team(manager_id)
-                st.rerun()
-        else:
-            st.error("Add FPL_MANAGER_ID to your .env file to get personalized advice.")
+        st.info("👆 First, let's load your team to give personalized advice.")
+        if st.button("🔄 Load My Team", type="primary"):
+            fetch_my_team(manager_id)
+            st.rerun()
         return
 
     # Get all the data we need
@@ -3077,13 +3122,7 @@ def show_my_team():
         st.warning("No data loaded. Click 'Update' in the sidebar first.")
         return
 
-    settings = get_settings()
-    manager_id = settings.fpl.manager_id
-
-    if not manager_id:
-        st.error("No FPL Manager ID configured. Add FPL_MANAGER_ID to your .env file.")
-        st.info("Find your manager ID in your FPL team URL: fantasy.premierleague.com/entry/**XXXXXXX**/event/...")
-        return
+    manager_id = get_manager_id()
 
     # Show any previous errors
     if "fetch_error" in st.session_state:
@@ -3777,26 +3816,20 @@ def show_performance_tracking():
         st.subheader("Live Performance from FPL API")
         st.markdown("*Auto-calculated from your FPL account - no manual entry needed!*")
 
-        # Get manager ID from config
-        from fpl_assistant.config import get_settings
-        settings = get_settings()
-        manager_id = settings.fpl.manager_id
+        manager_id = get_manager_id()
 
-        if not manager_id:
-            st.warning("Please set your Manager ID in the sidebar settings to auto-load stats.")
-        else:
-            if st.button("🔄 Load Latest Stats from FPL", type="primary"):
-                with st.spinner("Fetching your FPL data..."):
-                    auto_summary = get_auto_performance_summary(manager_id)
+        if st.button("🔄 Load Latest Stats from FPL", type="primary"):
+            with st.spinner("Fetching your FPL data..."):
+                auto_summary = get_auto_performance_summary(manager_id)
 
-                    if "error" in auto_summary:
-                        st.error(f"Failed to load: {auto_summary['error']}")
-                    else:
-                        st.session_state["auto_performance"] = auto_summary
-                        st.success("Stats loaded successfully!")
+                if "error" in auto_summary:
+                    st.error(f"Failed to load: {auto_summary['error']}")
+                else:
+                    st.session_state["auto_performance"] = auto_summary
+                    st.success("Stats loaded successfully!")
 
-            # Display auto-loaded stats
-            if "auto_performance" in st.session_state:
+        # Display auto-loaded stats
+        if "auto_performance" in st.session_state:
                 auto = st.session_state["auto_performance"]
 
                 st.markdown("---")
@@ -4181,12 +4214,7 @@ def show_rival_analysis():
         st.warning("No data loaded. Click 'Update' in the sidebar first.")
         return
 
-    settings = get_settings()
-    manager_id = settings.fpl.manager_id
-
-    if not manager_id:
-        st.error("Add FPL_MANAGER_ID to your .env file to use rival tracking.")
-        return
+    manager_id = get_manager_id()
 
     # Get league ID from user
     league_id = st.text_input(
