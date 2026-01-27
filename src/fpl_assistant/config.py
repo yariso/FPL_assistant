@@ -160,7 +160,12 @@ def get_settings() -> Settings:
 
     Uses lru_cache to ensure settings are only loaded once.
     Call get_settings.cache_clear() to reload settings.
+
+    Supports both:
+    - Local: .env file
+    - Streamlit Cloud: st.secrets
     """
+    import os
     from dotenv import load_dotenv
 
     # Try to find and load .env from project root
@@ -173,6 +178,23 @@ def get_settings() -> Settings:
         if env_path.exists():
             load_dotenv(env_path, override=True)
             break
+
+    # Also check Streamlit secrets (for cloud deployment)
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and 'fpl' in st.secrets:
+            # Set environment variables from Streamlit secrets
+            fpl_secrets = st.secrets.get('fpl', {})
+            if 'manager_id' in fpl_secrets:
+                os.environ['FPL_MANAGER_ID'] = str(fpl_secrets['manager_id'])
+            if 'email' in fpl_secrets:
+                os.environ['FPL_EMAIL'] = str(fpl_secrets['email'])
+            if 'password' in fpl_secrets:
+                os.environ['FPL_PASSWORD'] = str(fpl_secrets['password'])
+    except ImportError:
+        pass  # Streamlit not installed (CLI mode)
+    except Exception:
+        pass  # Secrets not available
 
     return Settings()
 
