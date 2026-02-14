@@ -857,7 +857,7 @@ class FPLOptimizer:
             week_plans.append(WeekPlan(
                 gameweek=gw,
                 transfers=transfers,
-                chip_used=None,  # TODO: Add chip optimization
+                chip_used=None,  # Set by post-solve chip evaluation below
                 captain_id=captain_id,
                 vice_captain_id=vice_captain_id,
                 starting_xi=starting_xi,
@@ -865,6 +865,27 @@ class FPLOptimizer:
                 expected_points=expected_points,
                 hit_cost=hit_cost,
             ))
+
+        # Post-solve: evaluate chips for each week
+        if available_chips:
+            remaining_chips = list(available_chips)
+            try:
+                from .chips import ChipOptimizer
+                chip_optimizer = ChipOptimizer(
+                    list(players.values()), [], projections_by_week,
+                )
+                for wp in week_plans:
+                    if not remaining_chips:
+                        break
+                    chip_rec = chip_optimizer.get_chip_recommendation(
+                        current_squad, wp.gameweek, remaining_chips,
+                    )
+                    if chip_rec.recommended_chip:
+                        wp.chip_used = chip_rec.recommended_chip
+                        remaining_chips.remove(chip_rec.recommended_chip)
+                        logger.info(f"GW{wp.gameweek}: Recommending chip {wp.chip_used.value}")
+            except Exception as e:
+                logger.debug(f"Post-solve chip evaluation failed: {e}")
 
         # Calculate totals
         total_expected = sum(wp.expected_points for wp in week_plans)
@@ -906,11 +927,31 @@ class FPLOptimizer:
         running_squad = current_squad
         running_free_transfers = current_squad.free_transfers
 
+        # Track which chips have been used
+        remaining_chips = list(available_chips) if available_chips else []
+
         for gw in gameweeks:
             week_projections = projections_by_week.get(gw, {})
 
-            # Determine chip to use (simple heuristic for now)
+            # Evaluate chip usage for this GW using ChipOptimizer
             chip = None
+            if remaining_chips:
+                try:
+                    from .chips import ChipOptimizer
+                    chip_optimizer = ChipOptimizer(
+                        list(players.values()),
+                        [],  # gameweek info populated from projections
+                        projections_by_week,
+                    )
+                    chip_rec = chip_optimizer.get_chip_recommendation(
+                        running_squad, gw, remaining_chips
+                    )
+                    if chip_rec.recommended_chip:
+                        chip = chip_rec.recommended_chip
+                        remaining_chips.remove(chip)
+                        logger.info(f"GW{gw}: Using chip {chip.value}")
+                except Exception as e:
+                    logger.debug(f"Chip evaluation failed for GW{gw}: {e}")
 
             week_plan = self.optimize_single_week(
                 players=players,

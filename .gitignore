@@ -125,3 +125,9 @@ cookies.json
 
 # uv
 uv.lock
+
+# GitHub tokens
+.github_token
+
+# Claude Code
+.claude/

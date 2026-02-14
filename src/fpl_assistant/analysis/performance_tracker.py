@@ -540,6 +540,13 @@ def get_auto_performance_summary(manager_id: int, api_client=None) -> dict:
         total_hits = sum(gw.get("event_transfers_cost", 0) // 4 for gw in current_history)
         total_hit_cost = sum(gw.get("event_transfers_cost", 0) for gw in current_history)
 
+        # Team value tracking (value is in tenths, e.g. 1000 = £100.0m)
+        weekly_values = [gw.get("value", 0) / 10 for gw in current_history]
+        weekly_bank = [gw.get("bank", 0) / 10 for gw in current_history]
+        starting_value = weekly_values[0] if weekly_values else 100.0
+        current_value = weekly_values[-1] if weekly_values else 100.0
+        value_gained = current_value - starting_value
+
         return {
             "gameweeks_tracked": total_gws,
             "total_points": total_points,
@@ -553,6 +560,11 @@ def get_auto_performance_summary(manager_id: int, api_client=None) -> dict:
             "total_hit_cost": total_hit_cost,
             "weekly_points": [gw.get("points", 0) for gw in current_history],
             "weekly_ranks": [gw.get("overall_rank", 0) for gw in current_history],
+            "weekly_values": weekly_values,
+            "weekly_bank": weekly_bank,
+            "starting_value": starting_value,
+            "current_value": current_value,
+            "value_gained": round(value_gained, 1),
         }
 
     except Exception as e:

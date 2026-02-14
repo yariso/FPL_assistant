@@ -35,6 +35,24 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Mobile-responsive CSS
+st.markdown("""
+<style>
+    /* Tighter padding on mobile */
+    @media (max-width: 768px) {
+        .block-container { padding: 1rem 0.5rem; }
+        [data-testid="stSidebar"] { min-width: 200px; }
+        .stMetric { padding: 0.25rem; }
+        h1 { font-size: 1.5rem !important; }
+        h2 { font-size: 1.25rem !important; }
+    }
+    /* Improve metric readability */
+    [data-testid="stMetricValue"] { font-size: 1.1rem; }
+    /* Fix dataframe scrolling on mobile */
+    .stDataFrame { overflow-x: auto; }
+</style>
+""", unsafe_allow_html=True)
+
 
 def get_data_dir() -> Path:
     """Get the data directory path."""
@@ -128,7 +146,7 @@ def main():
         # Navigation - WEEKLY ADVICE is the main page
         page = st.radio(
             "Navigation",
-            ["📋 Weekly Advice", "🏆 Best Squad", "👤 My Team", "🔍 Scout Tips", "📆 Fixtures", "🎯 Rivals", "👥 Players", "📊 Backtest", "📈 Performance"],
+            ["📋 Weekly Advice", "🏆 Best Squad", "👤 My Team", "🔍 Scout Tips", "📆 Fixtures", "🎯 Rivals", "👥 Players", "🔎 GW Review", "📊 Backtest", "📈 Performance"],
             label_visibility="collapsed",
         )
 
@@ -216,10 +234,33 @@ def main():
         show_rival_analysis()
     elif page == "👥 Players":
         show_players()
+    elif page == "🔎 GW Review":
+        show_gw_review()
     elif page == "📊 Backtest":
         show_backtest()
     elif page == "📈 Performance":
         show_performance_tracking()
+
+
+def _detect_league_position(overall_rank: int, total_managers: int = 11_000_000) -> str:
+    """
+    Determine league position strategy from overall rank.
+
+    Top 10%  -> "leading"  (protect rank, template picks)
+    10%-40%  -> "mid"      (balanced approach)
+    Bottom 60% -> "chasing" (differentials, take risks)
+
+    Returns: "leading", "mid", or "chasing"
+    """
+    if overall_rank <= 0 or total_managers <= 0:
+        return "mid"
+    percentile = overall_rank / total_managers
+    if percentile <= 0.10:
+        return "leading"
+    elif percentile <= 0.40:
+        return "mid"
+    else:
+        return "chasing"
 
 
 def show_weekly_advice():
@@ -632,6 +673,16 @@ def show_weekly_advice():
     # ===========================================
     st.header("👑 1. CAPTAIN PICK")
 
+    # Show detected strategy based on rank
+    overall_rank = manager.get("summary_overall_rank", 0)
+    detected_position = _detect_league_position(overall_rank)
+    strategy_labels = {
+        "leading": "🛡️ Protecting rank — template picks recommended",
+        "mid": "⚖️ Balanced strategy — mix of template and differential",
+        "chasing": "⚔️ Chasing — differentials recommended to gain ground",
+    }
+    st.caption(strategy_labels.get(detected_position, ""))
+
     my_players_with_xp = []
     for pick in picks:
         p = player_dict.get(pick["element"])
@@ -645,10 +696,12 @@ def show_weekly_advice():
     if my_players_with_xp:
         # Get differential captain analysis - ONLY from players you own!
         try:
+            overall_rank = manager.get("summary_overall_rank", 0)
+            league_position = _detect_league_position(overall_rank)
             captain_recommendation = engine.get_differential_captain_value(
                 gameweek=gw,
                 db=db,
-                league_position="mid",  # TODO: Get from mini-league data
+                league_position=league_position,
                 risk_tolerance="medium",
                 owned_player_ids=my_player_ids,  # Only consider your squad!
             )
@@ -691,6 +744,74 @@ def show_weekly_advice():
             p2, xp2, _ = my_players_with_xp[1]
             team2 = teams_dict.get(p2.team_id)
             st.info(f"Vice Captain: {p2.web_name} ({team2.short_name if team2 else '?'}) - {xp2:.1f} xP")
+
+        # ===========================================
+        # SAFETY vs DIFFERENTIAL CAPTAIN FRAMING
+        # ===========================================
+        if has_eo_analysis and captain_recommendation:
+            rec = captain_recommendation
+            with st.expander("🛡️ Safety vs Differential Captain", expanded=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    template = rec.template_captain
+                    t_team = teams_dict.get(template.team_id)
+                    st.markdown(f"**🛡️ SAFE PICK: {template.web_name}**")
+                    st.caption(f"{t_team.short_name if t_team else '?'} | {rec.template_captain_xp:.1f} xP | {rec.template_captain_eo:.0f}% EO")
+                    st.caption("Protects rank — everyone has this captain")
+                with col2:
+                    if rec.differential_captain:
+                        diff_player = rec.differential_captain
+                        d_team = teams_dict.get(diff_player.team_id)
+                        st.markdown(f"**⚔️ DIFFERENTIAL: {diff_player.web_name}**")
+                        st.caption(f"{d_team.short_name if d_team else '?'} | {rec.differential_captain_xp:.1f} xP | {rec.differential_captain_eo:.0f}% EO")
+                        st.caption("Gains rank if correct — risky if wrong")
+                    else:
+                        st.markdown("**⚔️ DIFFERENTIAL: None found**")
+                        st.caption("No strong differential option this week")
+
+                strategy_text = {
+                    "template": "🛡️ Go with the safe pick — protect your rank",
+                    "differential": "⚔️ Back the differential — time to take a risk",
+                    "slight_differential": "⚖️ Moderate differential — calculated risk",
+                }
+                strategy_val = rec.recommended_strategy.value if hasattr(rec.recommended_strategy, 'value') else str(rec.recommended_strategy)
+                st.markdown(f"**Recommendation:** {strategy_text.get(strategy_val, strategy_val)}")
+                st.caption(rec.reasoning)
+
+        # ===========================================
+        # MUST-OWN & DIFFERENTIAL ALERTS
+        # ===========================================
+        with st.expander("📊 Must-Own & Differential Alerts", expanded=False):
+            # Flag players by ownership tier
+            high_eo_players = [
+                (p, xp) for p, xp, _ in my_players_with_xp
+                if p.selected_by_percent >= 50 and xp > 0
+            ]
+            diff_candidates = [
+                (p, xp) for p in players
+                if p.selected_by_percent < 10 and p.form >= 5 and p.is_available
+                and p.id not in my_player_ids
+                for xp in [projections.get(p.id, 0)] if xp >= 4
+            ]
+            diff_candidates.sort(key=lambda x: -x[1])
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Must-Own (>50% ownership, high xP)**")
+                if high_eo_players:
+                    for p_eo, xp_eo in high_eo_players[:5]:
+                        t = teams_dict.get(p_eo.team_id)
+                        st.write(f"  ✅ {p_eo.web_name} ({t.short_name if t else '?'}) — {p_eo.selected_by_percent:.1f}% owned, {xp_eo:.1f} xP")
+                else:
+                    st.caption("No must-own players in your squad this week")
+            with col2:
+                st.markdown("**Differential Targets (<10% owned, form 5+)**")
+                if diff_candidates:
+                    for p_d, xp_d in diff_candidates[:5]:
+                        t = teams_dict.get(p_d.team_id)
+                        st.write(f"  ⚔️ {p_d.web_name} ({t.short_name if t else '?'}) — {p_d.selected_by_percent:.1f}% owned, {xp_d:.1f} xP")
+                else:
+                    st.caption("No strong differentials found")
 
         # ===========================================
         # EVENT-BASED SIMULATION - More accurate captain analysis
@@ -2049,6 +2170,45 @@ def show_weekly_advice():
         except Exception as e:
             st.caption(f"Detailed chip analysis not available: {e}")
 
+    # ===========================================
+    # 4b. PRICE CHANGE ALERTS
+    # ===========================================
+    with st.expander("💰 Price Change Alerts", expanded=False):
+        try:
+            from fpl_assistant.predictions.prices import PricePredictor
+            price_pred = PricePredictor(db)
+            my_players_list = [player_dict.get(p["element"]) for p in picks if player_dict.get(p["element"])]
+            price_alerts_data = price_pred.get_price_alerts(my_players_list, players)
+
+            has_any_alerts = any(price_alerts_data[k] for k in price_alerts_data)
+
+            if has_any_alerts:
+                col1, col2 = st.columns(2)
+                with col1:
+                    if price_alerts_data["urgent_sell"]:
+                        st.error("**Sell NOW (price drop imminent):**")
+                        for pred in price_alerts_data["urgent_sell"]:
+                            st.write(f"  🚨 {pred.player_name} (£{pred.current_price:.1f}m) — {pred.probability*100:.0f}% chance of drop {pred.expected_time}")
+                    if price_alerts_data["consider_sell"]:
+                        st.warning("**Consider selling (trending down):**")
+                        for pred in price_alerts_data["consider_sell"]:
+                            st.write(f"  ⚠️ {pred.player_name} (£{pred.current_price:.1f}m) — {pred.probability*100:.0f}% chance")
+
+                with col2:
+                    if price_alerts_data["buy_soon"]:
+                        st.success("**Buy soon (price rising):**")
+                        for pred in price_alerts_data["buy_soon"]:
+                            st.write(f"  📈 {pred.player_name} (£{pred.current_price:.1f}m) — rises {pred.expected_time}")
+                    if price_alerts_data["rising_targets"]:
+                        st.info("**Rising targets (not owned):**")
+                        for pred in price_alerts_data["rising_targets"]:
+                            st.write(f"  📈 {pred.player_name} (£{pred.current_price:.1f}m) — {pred.ownership_percent:.1f}% owned")
+            else:
+                st.success("No imminent price changes affecting your squad.")
+
+        except Exception as e:
+            st.caption(f"Price analysis not available: {e}")
+
     st.markdown("---")
 
     # ===========================================
@@ -3381,6 +3541,65 @@ def display_my_team():
 
     st.dataframe(bench_data, use_container_width=True, hide_index=True)
 
+    # ===========================================
+    # TEMPLATE TEAM COMPARISON
+    # ===========================================
+    st.markdown("---")
+    st.subheader("📋 Template Comparison")
+    st.markdown("*How does your squad compare to the most commonly owned players?*")
+
+    # Build template: top owned player at each position
+    from fpl_assistant.data.models import Position
+    import pandas as pd
+
+    available_players = [p for p in all_players if p.is_available]
+
+    template_by_pos = {}
+    pos_limits = {Position.GK: 2, Position.DEF: 5, Position.MID: 5, Position.FWD: 3}
+
+    for pos, limit in pos_limits.items():
+        pos_players = [p for p in available_players if p.position == pos]
+        pos_players.sort(key=lambda p: -p.selected_by_percent)
+        template_by_pos[pos] = pos_players[:limit]
+
+    # Build template XI (most owned at each position)
+    template_ids = set()
+    for pos_players in template_by_pos.values():
+        for p in pos_players:
+            template_ids.add(p.id)
+
+    # Compare
+    my_ids = {p["element"] for p in picks}
+    overlap = my_ids & template_ids
+    only_mine = my_ids - template_ids
+    only_template = template_ids - my_ids
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        overlap_pct = len(overlap) / 15 * 100 if len(my_ids) > 0 else 0
+        st.metric("Template Match", f"{overlap_pct:.0f}%", help="% of your squad in the template")
+    with col2:
+        st.metric("Common Players", len(overlap))
+    with col3:
+        st.metric("Your Differentials", len(only_mine))
+
+    with st.expander("Template Details", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Your Differentials** (not in template):")
+            for pid in only_mine:
+                p = player_dict.get(pid)
+                if p:
+                    t = teams_dict.get(p.team_id)
+                    st.write(f"  ⚔️ {p.web_name} ({t.short_name if t else '?'}) — {p.selected_by_percent:.1f}% owned")
+        with col2:
+            st.markdown("**Template players you're missing:**")
+            for pid in sorted(only_template, key=lambda x: -(player_dict.get(x, type('', (), {'selected_by_percent': 0})()).selected_by_percent))[:8]:
+                p = player_dict.get(pid)
+                if p:
+                    t = teams_dict.get(p.team_id)
+                    st.write(f"  📋 {p.web_name} ({t.short_name if t else '?'}) — {p.selected_by_percent:.1f}% owned")
+
 
 def show_scout_tips():
     """Scout Tips page - community recommendations and team intelligence."""
@@ -3622,6 +3841,271 @@ def show_players():
         })
 
     st.dataframe(data, use_container_width=True, hide_index=True)
+
+
+def show_gw_review():
+    """Post-Gameweek Review - Luck vs Skill analysis."""
+    st.title("🔎 Gameweek Review")
+    st.markdown("*Was it luck or good decisions? Elite managers distinguish process from outcome.*")
+
+    db = get_db()
+    if db.get_player_count() == 0:
+        st.warning("No data loaded. Click 'Update' in the sidebar first.")
+        return
+
+    manager_id = get_manager_id()
+
+    # Check if team is loaded
+    if "my_team" not in st.session_state or not st.session_state.my_team:
+        st.info("Load your team first to review gameweek results.")
+        if st.button("🔄 Load My Team", type="primary"):
+            fetch_my_team(manager_id)
+            st.rerun()
+        return
+
+    from fpl_assistant.analysis.postgw import PostGWAnalyzer, OutcomeType
+    from fpl_assistant.predictions import ProjectionEngine
+
+    players = db.get_all_players()
+    teams = db.get_all_teams()
+    fixtures = db.get_all_fixtures()
+    player_dict = {p.id: p for p in players}
+
+    current_gw = db.get_current_gameweek()
+    # Default to reviewing the LAST completed gameweek
+    last_completed_gw = (current_gw.id - 1) if current_gw and current_gw.id > 1 else 1
+
+    review_gw = st.number_input(
+        "Review Gameweek",
+        min_value=1, max_value=38,
+        value=last_completed_gw,
+        help="Select a completed gameweek to review"
+    )
+
+    if st.button("🔎 Analyze Gameweek", type="primary"):
+        with st.spinner(f"Analyzing GW{review_gw}..."):
+            try:
+                # Get picks for that GW
+                from fpl_assistant.api import SyncFPLClient
+                client = SyncFPLClient()
+
+                try:
+                    picks_data = client.get_entry_picks(manager_id, review_gw)
+                finally:
+                    client.close()
+
+                picks = picks_data.get("picks", [])
+                if not picks:
+                    st.error(f"No picks found for GW{review_gw}. Make sure this gameweek has been played.")
+                    return
+
+                # Get actual results from the API element summary
+                actual_results = {}
+                for pick in picks:
+                    pid = pick["element"]
+                    p = player_dict.get(pid)
+                    if p:
+                        # Use the points from the picks data if available
+                        # The API includes points in the picks response for completed GWs
+                        actual_results[pid] = pick.get("points", 0) if "points" in pick else 0
+
+                # If no points in picks, try to calculate from player history
+                if all(v == 0 for v in actual_results.values()) and actual_results:
+                    # Fallback: use player event points from element summary
+                    for pick in picks:
+                        pid = pick["element"]
+                        p = player_dict.get(pid)
+                        if p and hasattr(p, 'event_points'):
+                            actual_results[pid] = p.event_points
+
+                # Get predictions for that GW
+                engine = ProjectionEngine(players, teams, fixtures)
+                predictions = {}
+                for pick in picks:
+                    pid = pick["element"]
+                    p = player_dict.get(pid)
+                    if p:
+                        predictions[pid] = engine.project_single_player(p, review_gw)
+
+                # Get transfers for that GW
+                transfers = picks_data.get("entry_history", {}).get("event_transfers", 0)
+                transfer_list = []  # Would need transfers API for full detail
+
+                # Run analysis
+                analyzer = PostGWAnalyzer(
+                    players=player_dict,
+                    my_picks=picks,
+                    actual_results=actual_results,
+                    predictions=predictions,
+                    transfers_made=transfer_list,
+                )
+                analysis = analyzer.analyze(review_gw)
+
+                # Store in session for display
+                st.session_state["gw_review"] = analysis
+
+            except Exception as e:
+                st.error(f"Failed to analyze GW{review_gw}: {e}")
+                import traceback
+                with st.expander("Error details"):
+                    st.code(traceback.format_exc())
+                return
+
+    # Display analysis if available
+    if "gw_review" in st.session_state:
+        analysis = st.session_state["gw_review"]
+
+        # Overall verdict with color-coded banner
+        st.markdown("---")
+
+        outcome_display = {
+            OutcomeType.GOOD_PROCESS_GOOD_OUTCOME: ("Good Decisions, Good Result", "success"),
+            OutcomeType.GOOD_PROCESS_BAD_OUTCOME: ("Good Decisions, Bad Luck", "info"),
+            OutcomeType.BAD_PROCESS_GOOD_OUTCOME: ("Got Lucky — Review Decisions", "warning"),
+            OutcomeType.BAD_PROCESS_BAD_OUTCOME: ("Bad Decisions, Bad Result — Learn From This", "error"),
+        }
+        verdict_text, verdict_type = outcome_display.get(
+            analysis.overall_outcome,
+            ("Unknown", "info"),
+        )
+
+        getattr(st, verdict_type)(f"**GW{analysis.gameweek} Verdict: {verdict_text}**")
+
+        # Points summary
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Actual Points", analysis.actual_points)
+        with col2:
+            st.metric("Predicted Points", f"{analysis.predicted_points}")
+        with col3:
+            color = "normal" if analysis.variance >= 0 else "inverse"
+            st.metric("Variance", f"{analysis.variance:+.1f}", delta_color=color)
+        with col4:
+            luck_pct = abs(analysis.variance_contribution) / max(abs(analysis.variance), 1) * 100 if analysis.variance != 0 else 0
+            st.metric("Luck Factor", f"{luck_pct:.0f}%",
+                       help="Estimated % of variance attributable to luck vs decisions")
+
+        # Captain Analysis
+        st.markdown("---")
+        st.subheader("Captain Analysis")
+
+        cap = analysis.captain_analysis
+
+        cap_outcome_icons = {
+            OutcomeType.GOOD_PROCESS_GOOD_OUTCOME: "✅",
+            OutcomeType.GOOD_PROCESS_BAD_OUTCOME: "🎲",
+            OutcomeType.BAD_PROCESS_GOOD_OUTCOME: "🍀",
+            OutcomeType.BAD_PROCESS_BAD_OUTCOME: "❌",
+        }
+        cap_icon = cap_outcome_icons.get(cap.outcome_type, "")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(f"{cap_icon} Your Captain", f"{cap.captain_name} ({cap.captain_actual_points} pts)")
+        with col2:
+            st.metric("Best Captain Option", f"{cap.best_captain_name} ({cap.best_captain_actual_points} pts)")
+        with col3:
+            lost = cap.points_lost_to_best
+            st.metric("Points Lost to Best", f"{lost}" if lost > 0 else "0 — Perfect!",
+                       delta=f"-{lost}" if lost > 0 else None,
+                       delta_color="inverse" if lost > 0 else "off")
+
+        st.info(cap.reasoning)
+
+        # Bench Analysis
+        st.markdown("---")
+        st.subheader("Bench Analysis")
+
+        bench = analysis.bench_analysis
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Bench Points", bench.total_bench_points)
+        with col2:
+            bench_status = "✅ Correct" if bench.bench_order_correct else "⚠️ Could improve"
+            st.metric("Bench Order", bench_status)
+        with col3:
+            st.metric("Bench Outscored Starters", len(bench.bench_beats_starter))
+
+        if bench.bench_beats_starter:
+            st.warning("Bench players who outscored starters:")
+            for bench_name, bench_pts, starter_name, starter_pts in bench.bench_beats_starter:
+                st.write(f"  • **{bench_name}** ({bench_pts} pts) > **{starter_name}** ({starter_pts} pts)")
+        else:
+            st.success("All starters outscored bench players — good team selection!")
+
+        st.info(bench.reasoning)
+
+        # Transfer Analysis
+        st.markdown("---")
+        st.subheader("Transfer Analysis")
+
+        xfer = analysis.transfer_analysis
+
+        if xfer.transfers_made == 0:
+            st.info("No transfers made this week.")
+        else:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Transfers Made", xfer.transfers_made)
+            with col2:
+                st.metric("Hits Taken", f"{xfer.hits_taken} (-{xfer.hit_cost} pts)")
+            with col3:
+                net_color = "normal" if xfer.net_after_hits >= 0 else "inverse"
+                st.metric("Net Impact", f"{xfer.net_after_hits:+d} pts", delta_color=net_color)
+
+            if xfer.transfer_outcomes:
+                import pandas as pd
+                xfer_data = []
+                for t in xfer.transfer_outcomes:
+                    xfer_data.append({
+                        "Out": t["player_out"],
+                        "Out Pts": t["out_pts"],
+                        "In": t["player_in"],
+                        "In Pts": t["in_pts"],
+                        "Net": f"{t['net_gain']:+d}",
+                    })
+                st.dataframe(pd.DataFrame(xfer_data), use_container_width=True, hide_index=True)
+
+            st.info(xfer.reasoning)
+
+        # Variance Breakdown
+        st.markdown("---")
+        st.subheader("Luck vs Decisions Breakdown")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Luck Contribution", f"{analysis.variance_contribution:+.1f} pts",
+                       help="Points gained/lost due to unpredictable variance (bonus, low-xG goals, etc.)")
+        with col2:
+            st.metric("Decision Contribution", f"{analysis.decision_contribution:+.1f} pts",
+                       help="Points gained/lost due to your captain/bench/transfer decisions")
+
+        # Key Lessons
+        if analysis.lessons:
+            st.markdown("---")
+            st.subheader("Key Takeaways")
+            for lesson in analysis.lessons:
+                st.markdown(f"• {lesson}")
+
+        # Context for the user
+        st.markdown("---")
+        with st.expander("How to read this"):
+            st.markdown("""
+**Process vs Outcome Matrix:**
+
+| | Good Outcome | Bad Outcome |
+|---|---|---|
+| **Good Process** | ✅ Keep doing this | 🎲 Unlucky — trust the process |
+| **Bad Process** | 🍀 Got lucky — don't repeat | ❌ Learn from this |
+
+**Why this matters:** Top 100 FPL managers focus on making good decisions consistently,
+even when the results don't go their way. A single gameweek has high variance (~60% luck),
+but over a full season, good processes win.
+
+**Luck Factor:** FPL points have inherent randomness — bonus points, low-xG goals,
+last-minute assists. We estimate ~60% of any weekly variance is luck.
+            """)
 
 
 def show_backtest():
@@ -3869,6 +4353,34 @@ def show_performance_tracking():
                 st.metric("Hits Taken", auto["total_hits"])
             with col3:
                 st.metric("Hit Cost", f"-{auto['total_hit_cost']} pts")
+
+            # Team Value tracking
+            if auto.get("weekly_values"):
+                st.markdown("---")
+                st.markdown("### Team Value")
+
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Starting Value", f"£{auto['starting_value']:.1f}m")
+                with col2:
+                    st.metric("Current Value", f"£{auto['current_value']:.1f}m")
+                with col3:
+                    vg = auto["value_gained"]
+                    st.metric("Value Gained", f"£{vg:+.1f}m",
+                              delta=f"£{vg:+.1f}m",
+                              delta_color="normal" if vg >= 0 else "inverse")
+
+                import pandas as pd
+                value_df = pd.DataFrame({
+                    "Gameweek": list(range(1, len(auto["weekly_values"]) + 1)),
+                    "Team Value (£m)": auto["weekly_values"],
+                })
+                st.line_chart(value_df.set_index("Gameweek")["Team Value (£m)"])
+
+                if vg >= 0.5:
+                    st.success(f"Building team value well — £{vg:.1f}m gained gives you more flexibility.")
+                elif vg < -0.5:
+                    st.warning(f"Lost £{abs(vg):.1f}m in team value. Consider making early transfers to capture rising players.")
 
             # Weekly points chart
             st.markdown("---")
@@ -4203,6 +4715,99 @@ def show_fixture_ticker():
         - **x2** = Double gameweek (two fixtures)
         """)
 
+    # ===========================================
+    # TRANSFER PLANNER - Strategic roadmap
+    # ===========================================
+    st.markdown("---")
+    st.subheader("🗺️ Transfer Planner")
+    st.markdown("*Strategic roadmap for upcoming gameweeks — plan transfers around BGW/DGW windows*")
+
+    # Check if user has a team loaded
+    has_team = "my_team" in st.session_state and st.session_state.my_team
+    my_player_ids = set()
+    if has_team:
+        picks = st.session_state.my_team.get("picks", [])
+        my_player_ids = {p["element"] for p in picks}
+
+    player_dict = {p.id: p for p in players}
+    teams_dict = {t.id: t for t in teams}
+
+    # Build roadmap: for each upcoming GW, show key events and transfer suggestions
+    roadmap = []
+    for gw_offset in range(num_weeks):
+        gw_num = start_gw + gw_offset
+        gw_info = next((g for g in gameweeks if g.id == gw_num), None)
+        gw_fixtures = [f for f in fixtures if f.gameweek == gw_num]
+
+        # Count blanks and doubles
+        teams_with_fixtures = set()
+        team_fixture_count = {}
+        for f in gw_fixtures:
+            teams_with_fixtures.add(f.home_team_id)
+            teams_with_fixtures.add(f.away_team_id)
+            team_fixture_count[f.home_team_id] = team_fixture_count.get(f.home_team_id, 0) + 1
+            team_fixture_count[f.away_team_id] = team_fixture_count.get(f.away_team_id, 0) + 1
+
+        all_team_ids = {t.id for t in teams}
+        blank_team_ids = all_team_ids - teams_with_fixtures
+        double_team_ids = {tid for tid, count in team_fixture_count.items() if count > 1}
+
+        events = []
+        suggestions = []
+
+        if blank_team_ids:
+            blank_names = [teams_dict[tid].short_name for tid in blank_team_ids if tid in teams_dict]
+            events.append(f"⚠️ BLANK: {', '.join(blank_names)}")
+            # Check if user has players from blank teams
+            if has_team:
+                affected = [player_dict[pid].web_name for pid in my_player_ids
+                           if pid in player_dict and player_dict[pid].team_id in blank_team_ids]
+                if affected:
+                    suggestions.append(f"Transfer OUT: {', '.join(affected)} (blank GW)")
+
+        if double_team_ids:
+            double_names = [teams_dict[tid].short_name for tid in double_team_ids if tid in teams_dict]
+            events.append(f"🔥 DOUBLE: {', '.join(double_names)}")
+            # Suggest bringing in DGW players
+            if has_team:
+                dgw_targets = [
+                    p for p in players
+                    if p.team_id in double_team_ids
+                    and p.id not in my_player_ids
+                    and p.is_available and p.form >= 4
+                ]
+                dgw_targets.sort(key=lambda p: -p.form)
+                if dgw_targets:
+                    top_targets = [f"{p.web_name} ({teams_dict.get(p.team_id, type('', (), {'short_name': '?'})()).short_name})" for p in dgw_targets[:3]]
+                    suggestions.append(f"Transfer IN targets: {', '.join(top_targets)}")
+
+        # Fixture swing detection — teams going from hard to easy
+        best_attack_runs = ticker.get_best_attack_fixtures(gw_num, 3, 3)
+        if best_attack_runs and gw_offset > 0:
+            for run in best_attack_runs[:2]:
+                if run.avg_fdr <= 2.5:
+                    events.append(f"🎯 Easy run: {run.team_short_name} (avg FDR {run.avg_fdr:.1f})")
+
+        if not events:
+            events.append("Standard gameweek")
+
+        roadmap.append({
+            "gw": gw_num,
+            "events": events,
+            "suggestions": suggestions,
+        })
+
+    # Display roadmap
+    for item in roadmap:
+        gw_label = f"**GW{item['gw']}**"
+        events_str = " | ".join(item["events"])
+        st.markdown(f"{gw_label}: {events_str}")
+        for suggestion in item["suggestions"]:
+            st.caption(f"  → {suggestion}")
+
+    if not has_team:
+        st.info("Load your team (from Weekly Advice page) for personalized transfer suggestions.")
+
 
 def show_rival_analysis():
     """Show mini-league rival tracking and analysis."""
@@ -4216,20 +4821,44 @@ def show_rival_analysis():
 
     manager_id = get_manager_id()
 
-    # Get league ID from user
-    league_id = st.text_input(
-        "Enter your mini-league ID",
-        help="Find this in the URL when viewing your league on the FPL website: fantasy.premierleague.com/leagues/[ID]/standings"
-    )
+    # Multi-league support: store league IDs in session state
+    if "saved_leagues" not in st.session_state:
+        st.session_state.saved_leagues = {}
 
-    if not league_id:
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        league_id_input = st.text_input(
+            "Enter a mini-league ID",
+            help="Find this in the URL: fantasy.premierleague.com/leagues/[ID]/standings"
+        )
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        add_league = st.button("Add League")
+
+    if add_league and league_id_input:
+        try:
+            lid = int(league_id_input)
+            st.session_state.saved_leagues[lid] = f"League {lid}"
+        except ValueError:
+            st.error("League ID must be a number")
+
+    # Show saved leagues as selectable tabs
+    if st.session_state.saved_leagues:
+        league_options = {lid: name for lid, name in st.session_state.saved_leagues.items()}
+        selected_league = st.selectbox(
+            "Select league",
+            options=list(league_options.keys()),
+            format_func=lambda x: f"{league_options[x]} ({x})",
+        )
+        league_id = selected_league
+    elif league_id_input:
+        try:
+            league_id = int(league_id_input)
+        except ValueError:
+            st.error("League ID must be a number")
+            return
+    else:
         st.info("Enter a mini-league ID to analyze your rivals.")
-        return
-
-    try:
-        league_id = int(league_id)
-    except ValueError:
-        st.error("League ID must be a number")
         return
 
     # Fetch league data
@@ -4271,6 +4900,10 @@ def show_rival_analysis():
             standings = all_standings
 
         st.success(f"Loaded **{league_name}** ({len(standings)} managers)")
+
+        # Save league name for the dropdown
+        if league_name and league_id in st.session_state.get("saved_leagues", {}):
+            st.session_state.saved_leagues[league_id] = league_name
 
         # Debug: Show what we're looking for
         with st.expander("Debug: Manager ID lookup", expanded=False):
