@@ -40,16 +40,32 @@ st.markdown("""
 <style>
     /* Tighter padding on mobile */
     @media (max-width: 768px) {
-        .block-container { padding: 1rem 0.5rem; }
-        [data-testid="stSidebar"] { min-width: 200px; }
-        .stMetric { padding: 0.25rem; }
-        h1 { font-size: 1.5rem !important; }
-        h2 { font-size: 1.25rem !important; }
+        .block-container { padding: 0.75rem 0.5rem !important; }
+        [data-testid="stSidebar"] { min-width: 180px; }
+        .stMetric { padding: 0.2rem; }
+        h1 { font-size: 1.4rem !important; }
+        h2 { font-size: 1.2rem !important; }
+        h3 { font-size: 1.05rem !important; }
+        /* Stack columns on narrow screens */
+        [data-testid="column"] { min-width: 120px; }
+        /* Bigger touch targets for buttons */
+        .stButton > button { min-height: 2.5rem; font-size: 0.9rem; }
+        /* Radio buttons: horizontal scroll instead of wrapping badly */
+        [data-testid="stRadio"] > div { flex-wrap: nowrap; overflow-x: auto; gap: 0.25rem; }
+        [data-testid="stRadio"] label { font-size: 0.8rem; white-space: nowrap; }
+        /* Expanders easier to tap */
+        [data-testid="stExpander"] summary { min-height: 2.5rem; }
+        /* Smaller metric labels */
+        [data-testid="stMetricLabel"] { font-size: 0.75rem; }
     }
     /* Improve metric readability */
     [data-testid="stMetricValue"] { font-size: 1.1rem; }
     /* Fix dataframe scrolling on mobile */
     .stDataFrame { overflow-x: auto; }
+    /* FPL purple accent on active nav */
+    [data-testid="stRadio"] label[data-checked="true"] {
+        border-color: #37003c !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -3824,10 +3840,17 @@ def show_players():
     # Display
     teams_dict = {t.id: t for t in teams}
 
+    from fpl_assistant.predictions.set_pieces import (
+        get_set_piece_roles, get_total_set_piece_boost,
+        KNOWN_PENALTY_TAKERS_2025_26, KNOWN_CORNER_TAKERS_2025_26,
+        KNOWN_FK_TAKERS_2025_26,
+    )
+
     data = []
     for p in players:
         team_obj = teams_dict.get(p.team_id)
         xp = player_projections.get(p.id, 0)
+        roles = get_set_piece_roles(p.web_name)
         data.append({
             "Player": p.web_name,
             "Team": team_obj.short_name if team_obj else "?",
@@ -3837,10 +3860,32 @@ def show_players():
             "Points": p.total_points,
             "Form": p.form,
             "Own%": f"{p.selected_by_percent:.1f}%",
+            "Set Pieces": ", ".join(roles) if roles else "-",
             "Status": "✅" if p.status == PlayerStatus.AVAILABLE else "⚠️",
         })
 
     st.dataframe(data, use_container_width=True, hide_index=True)
+
+    # Set piece takers section
+    with st.expander("Set Piece Takers"):
+        sp_data = []
+        for p in db.get_all_players():
+            boost = get_total_set_piece_boost(p.web_name)
+            if boost > 0:
+                team_obj = teams_dict.get(p.team_id)
+                roles = get_set_piece_roles(p.web_name)
+                sp_data.append({
+                    "Player": p.web_name,
+                    "Team": team_obj.short_name if team_obj else "?",
+                    "Pos": p.position_name,
+                    "Roles": ", ".join(roles),
+                    "xP Boost": f"+{boost:.2f}",
+                    "Price": f"£{p.price:.1f}m",
+                    "Form": p.form,
+                })
+        sp_data.sort(key=lambda x: -float(x["xP Boost"].strip("+")))
+        st.dataframe(sp_data, use_container_width=True, hide_index=True)
+        st.caption("xP Boost = estimated extra points per game from set piece duties (penalties + corners + FKs)")
 
 
 def show_gw_review():
@@ -4817,47 +4862,57 @@ def show_rival_analysis():
     if "saved_leagues" not in st.session_state:
         st.session_state.saved_leagues = {}
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2, col3 = st.columns([3, 1, 1])
     with col1:
         league_id_input = st.text_input(
-            "Enter a mini-league ID",
+            "Enter a league ID",
             help="Find this in the URL: fantasy.premierleague.com/leagues/[ID]/standings"
         )
     with col2:
+        league_type = st.selectbox("Type", ["Classic", "H2H"])
+    with col3:
         st.markdown("<br>", unsafe_allow_html=True)
         add_league = st.button("Add League")
 
     if add_league and league_id_input:
         try:
             lid = int(league_id_input)
-            st.session_state.saved_leagues[lid] = f"League {lid}"
+            st.session_state.saved_leagues[lid] = {"name": f"League {lid}", "type": league_type}
         except ValueError:
             st.error("League ID must be a number")
 
     # Show saved leagues as selectable tabs
+    is_h2h = False
     if st.session_state.saved_leagues:
-        league_options = {lid: name for lid, name in st.session_state.saved_leagues.items()}
+        league_options = st.session_state.saved_leagues
         selected_league = st.selectbox(
             "Select league",
             options=list(league_options.keys()),
-            format_func=lambda x: f"{league_options[x]} ({x})",
+            format_func=lambda x: "{} [{}] ({})".format(
+                league_options[x]["name"] if isinstance(league_options[x], dict) else league_options[x],
+                league_options[x].get("type", "Classic") if isinstance(league_options[x], dict) else "Classic",
+                x,
+            ),
         )
         league_id = selected_league
+        league_info = league_options.get(league_id, {})
+        is_h2h = (isinstance(league_info, dict) and league_info.get("type") == "H2H")
     elif league_id_input:
         try:
             league_id = int(league_id_input)
+            is_h2h = (league_type == "H2H")
         except ValueError:
             st.error("League ID must be a number")
             return
     else:
-        st.info("Enter a mini-league ID to analyze your rivals.")
+        st.info("Enter a league ID to analyze your rivals.")
         return
 
     # Fetch league data
     from fpl_assistant.api import SyncFPLClient
     from fpl_assistant.predictions.rivals import (
-        RivalTracker, parse_league_standings, parse_rival_team,
-        RivalStrategy
+        RivalTracker, parse_league_standings, parse_h2h_standings,
+        parse_rival_team, RivalStrategy,
     )
 
     client = SyncFPLClient()
@@ -4871,8 +4926,12 @@ def show_rival_analysis():
             max_pages = 10  # Up to 500 managers
 
             while page <= max_pages:
-                league_data = client.get_classic_league(league_id, page=page)
-                name, page_standings = parse_league_standings(league_data)
+                if is_h2h:
+                    league_data = client.get_h2h_league(league_id, page=page)
+                    name, page_standings = parse_h2h_standings(league_data)
+                else:
+                    league_data = client.get_classic_league(league_id, page=page)
+                    name, page_standings = parse_league_standings(league_data)
 
                 if page == 1:
                     league_name = name
@@ -4891,11 +4950,12 @@ def show_rival_analysis():
 
             standings = all_standings
 
-        st.success(f"Loaded **{league_name}** ({len(standings)} managers)")
+        league_type_label = "H2H" if is_h2h else "Classic"
+        st.success(f"Loaded **{league_name}** [{league_type_label}] ({len(standings)} managers)")
 
         # Save league name for the dropdown
         if league_name and league_id in st.session_state.get("saved_leagues", {}):
-            st.session_state.saved_leagues[league_id] = league_name
+            st.session_state.saved_leagues[league_id] = {"name": league_name, "type": league_type_label}
 
         # Debug: Show what we're looking for
         with st.expander("Debug: Manager ID lookup", expanded=False):

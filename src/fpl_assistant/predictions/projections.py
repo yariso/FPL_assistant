@@ -980,11 +980,11 @@ class ProjectionEngine:
 
             total_xp += weighted_xp
 
-        # Set piece bonus: penalty/FK takers get additional xP
-        from .set_pieces import get_penalty_taker_boost
-        sp_boost = get_penalty_taker_boost(player.web_name)
+        # Set piece bonus: penalty/FK/corner takers get additional xP
+        from .set_pieces import get_total_set_piece_boost
+        sp_boost = get_total_set_piece_boost(player.web_name)
         if sp_boost > 0:
-            # Scale by P(plays) since they only get pens if on the pitch
+            # Scale by P(plays) since they only get set pieces if on the pitch
             mins_pred = self._get_minutes_prediction(player)
             total_xp += sp_boost * mins_pred.p_start
 

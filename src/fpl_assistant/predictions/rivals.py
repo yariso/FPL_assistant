@@ -420,3 +420,34 @@ def parse_rival_team(picks_data: dict[str, Any]) -> RivalTeam:
         vice_captain_id=vice_captain_id,
         chip_used=chip_used,
     )
+
+
+def parse_h2h_standings(data: dict[str, Any]) -> tuple[str, list[RivalEntry]]:
+    """
+    Parse H2H league standings from FPL API response.
+
+    H2H leagues use matches_won/drawn/lost and points_for instead of total.
+
+    Returns:
+        Tuple of (league_name, list of RivalEntry)
+    """
+    league_name = data.get("league", {}).get("name", "Unknown H2H League")
+    standings_data = data.get("standings", {}).get("results", [])
+
+    entries = []
+    for entry in standings_data:
+        # H2H points = 3*wins + 1*draws
+        h2h_points = entry.get("total", 0)
+        # points_for = actual FPL points scored (use for gap analysis)
+        fpl_points = entry.get("points_for", 0)
+
+        entries.append(RivalEntry(
+            manager_id=entry.get("entry", 0),
+            manager_name=entry.get("player_name", "Unknown"),
+            team_name=entry.get("entry_name", "Unknown Team"),
+            rank=entry.get("rank", 0),
+            total_points=fpl_points,  # Use FPL points for analysis
+            gameweek_points=entry.get("event_total", 0),
+        ))
+
+    return league_name, entries

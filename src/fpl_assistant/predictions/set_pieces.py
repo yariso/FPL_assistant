@@ -199,46 +199,74 @@ class SetPieceAnalyzer:
 # Updated periodically based on actual takers
 KNOWN_PENALTY_TAKERS_2025_26 = {
     # Format: player_web_name: priority (1 = primary, 2 = backup)
-    # Arsenal
-    "Saka": 1,
-    # Aston Villa
-    "Watkins": 1,
-    # Bournemouth
-    "Kluivert": 1,
-    # Brentford
-    "Mbeumo": 1,
-    # Brighton
-    "Joao Pedro": 1,
-    # Chelsea
-    "Palmer": 1,
-    # Crystal Palace
-    "Eze": 1,
-    # Everton
-    "Calvert-Lewin": 1,
-    # Fulham
-    "Andreas": 1,
-    # Ipswich
-    "Hutchinson": 1,
-    # Leicester
-    "Vardy": 1,
-    # Liverpool
-    "M.Salah": 1,
-    # Man City
-    "Haaland": 1,
-    # Man United
-    "B.Fernandes": 1,
-    # Newcastle
-    "Isak": 1,
-    # Nottm Forest
-    "Wood": 1,
-    # Southampton
-    "Aribo": 1,
-    # Spurs
-    "Son": 1,
-    # West Ham
-    "Bowen": 1,
-    # Wolves
-    "Neto": 1,
+    "Saka": 1,           # Arsenal
+    "Watkins": 1,         # Aston Villa
+    "Kluivert": 1,        # Bournemouth
+    "Mbeumo": 1,          # Brentford
+    "Joao Pedro": 1,      # Brighton
+    "Palmer": 1,           # Chelsea
+    "Eze": 1,              # Crystal Palace
+    "Calvert-Lewin": 1,   # Everton
+    "Andreas": 1,          # Fulham
+    "Hutchinson": 1,       # Ipswich
+    "Vardy": 1,            # Leicester
+    "M.Salah": 1,          # Liverpool
+    "Haaland": 1,          # Man City
+    "B.Fernandes": 1,      # Man United
+    "Isak": 1,             # Newcastle
+    "Wood": 1,             # Nottm Forest
+    "Aribo": 1,            # Southampton
+    "Son": 1,              # Spurs
+    "Bowen": 1,            # West Ham
+    "Neto": 1,             # Wolves
+}
+
+# Known corner takers for 2025/26
+# Corner takers get ~0.15 xA per game from set pieces
+KNOWN_CORNER_TAKERS_2025_26: dict[str, int] = {
+    "Saka": 1,             # Arsenal
+    "Odegaard": 1,         # Arsenal (alternate side)
+    "Rogers": 1,           # Aston Villa
+    "Kluivert": 1,         # Bournemouth
+    "Mbeumo": 1,           # Brentford
+    "Mitoma": 1,           # Brighton
+    "Palmer": 1,           # Chelsea
+    "Eze": 1,              # Crystal Palace
+    "McNeil": 1,           # Everton
+    "Andreas": 1,          # Fulham
+    "Hutchinson": 1,       # Ipswich
+    "Buonanotte": 1,       # Leicester
+    "Alexander-Arnold": 1, # Liverpool
+    "Foden": 1,            # Man City
+    "B.Fernandes": 1,      # Man United
+    "Gordon": 1,           # Newcastle
+    "Gibbs-White": 1,      # Nottm Forest
+    "Aribo": 1,            # Southampton
+    "Son": 1,              # Spurs
+    "Kudus": 1,            # West Ham
+    "Neto": 1,             # Wolves
+}
+
+# Known direct free kick takers for 2025/26
+# Direct FK takers get ~0.025 xG per game from FKs
+KNOWN_FK_TAKERS_2025_26: dict[str, int] = {
+    "Saka": 1,             # Arsenal
+    "McGinn": 1,           # Aston Villa
+    "Kluivert": 1,         # Bournemouth
+    "Mbeumo": 1,           # Brentford
+    "Mac Allister": 1,     # Brighton (direct)
+    "Palmer": 1,           # Chelsea
+    "Eze": 1,              # Crystal Palace
+    "McNeil": 1,           # Everton
+    "Andreas": 1,          # Fulham
+    "M.Salah": 1,          # Liverpool
+    "De Bruyne": 1,        # Man City
+    "B.Fernandes": 1,      # Man United
+    "Trippier": 1,         # Newcastle
+    "Gibbs-White": 1,      # Nottm Forest
+    "Son": 1,              # Spurs
+    "Ward-Prowse": 1,      # West Ham
+    "Neto": 1,             # Wolves
 }
 
 
@@ -264,6 +292,51 @@ def get_penalty_taker_boost(player_web_name: str) -> float:
         return PENALTIES_PER_TEAM_PER_GAME * PENALTY_CONVERSION_RATE * 4.5 * 0.3  # ~0.3 xP
 
 
+def get_corner_taker_boost(player_web_name: str) -> float:
+    """Get xP boost for known corner taker (~0.45 xP/game)."""
+    if player_web_name not in KNOWN_CORNER_TAKERS_2025_26:
+        return 0.0
+    # Corners per game * assist rate * assist points
+    return CORNERS_PER_GAME * CORNER_ASSIST_RATE * 3  # ~0.45 xP
+
+
+def get_fk_taker_boost(player_web_name: str) -> float:
+    """Get xP boost for known direct FK taker (~0.11 xP/game)."""
+    if player_web_name not in KNOWN_FK_TAKERS_2025_26:
+        return 0.0
+    # FK shots * conversion * avg goal points
+    return DIRECT_FK_SHOTS_PER_GAME * DIRECT_FK_CONVERSION * 4.5  # ~0.11 xP
+
+
+def get_total_set_piece_boost(player_web_name: str) -> float:
+    """
+    Get combined xP boost from all set piece duties.
+
+    Args:
+        player_web_name: Player's web name
+
+    Returns:
+        Total xP boost per game from penalties + corners + FKs
+    """
+    return (
+        get_penalty_taker_boost(player_web_name)
+        + get_corner_taker_boost(player_web_name)
+        + get_fk_taker_boost(player_web_name)
+    )
+
+
+def get_set_piece_roles(player_web_name: str) -> list[str]:
+    """Get list of set piece roles for a player."""
+    roles = []
+    if player_web_name in KNOWN_PENALTY_TAKERS_2025_26:
+        roles.append("Penalties")
+    if player_web_name in KNOWN_CORNER_TAKERS_2025_26:
+        roles.append("Corners")
+    if player_web_name in KNOWN_FK_TAKERS_2025_26:
+        roles.append("Free Kicks")
+    return roles
+
+
 def enhance_projection_with_set_pieces(
     base_xp: float,
     player_web_name: str,
@@ -278,9 +351,10 @@ def enhance_projection_with_set_pieces(
     Returns:
         Tuple of (enhanced_xp, reason_if_boosted)
     """
-    boost = get_penalty_taker_boost(player_web_name)
+    boost = get_total_set_piece_boost(player_web_name)
 
     if boost > 0:
-        return base_xp + boost, "Penalty taker (+{:.1f} xP)".format(boost)
+        roles = get_set_piece_roles(player_web_name)
+        return base_xp + boost, "{} (+{:.1f} xP)".format(" + ".join(roles), boost)
 
     return base_xp, None
