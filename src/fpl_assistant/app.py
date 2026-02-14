@@ -2766,77 +2766,89 @@ def show_best_squad():
 
             if st.button("🔬 Run Weight Optimization", help="Find optimal weights through simulated backtesting"):
                 with st.spinner(f"Running {opt_iterations} optimization iterations..."):
-                    # Create a simple scoring function based on current data
-                    # Since we don't have full historical data, we'll optimize based on
-                    # how well the projections match expected outcomes
-
-                    best_score = 0.0
-                    best_weights = custom_weights
-                    optimization_log = []
+                    # Score weights by correlation between projections and actual ppg
+                    # Uses total_points / games as ground truth
 
                     import random
 
-                    for iteration in range(opt_iterations):
-                        # Generate random weight variation
-                        test_weights = EnhancedWeightConfig(
-                            recent_form_weight=random.uniform(0.15, 0.35),
-                            rolling_xg_weight=random.uniform(0.18, 0.38),
-                            fixture_difficulty_weight=random.uniform(0.10, 0.25),
-                            season_form_weight=random.uniform(0.03, 0.15),
-                            ict_index_weight=random.uniform(0.02, 0.12),
-                            team_momentum_weight=random.uniform(0.04, 0.15),
-                            home_away_weight=random.uniform(0.02, 0.10),
-                            opposition_weakness_weight=random.uniform(0.03, 0.12),
-                            minutes_certainty_weight=random.uniform(0.03, 0.10),
-                            ownership_trend_weight=random.uniform(0.01, 0.08),
-                        ).normalize()
+                    # Build evaluation set: players with enough minutes for stable ppg
+                    eval_players = []
+                    actual_ppg = []
+                    for p in players:
+                        if p.minutes >= 450 and p.total_points > 0:
+                            games = p.minutes / 90.0
+                            eval_players.append(p)
+                            actual_ppg.append(p.total_points / games)
 
-                        # Score based on how well premium players rank
-                        # (A good weighting should rank high-owned premiums higher)
-                        test_calculator = EnhancedSignalCalculator(players, teams, fixtures)
-                        score = 0.0
-                        premium_scores = []
-                        budget_scores = []
+                    best_score = -1.0
+                    best_weights = custom_weights
+                    optimization_log = []
 
-                        for p in players[:200]:  # Sample players
-                            if p.status != PlayerStatus.AVAILABLE:
-                                continue
+                    if len(eval_players) < 20:
+                        st.warning("Not enough player data (need 20+ players with 450+ minutes). Try later in the season.")
+                    else:
+                        calculator = EnhancedSignalCalculator(players, teams, fixtures)
+
+                        # Pre-compute signals once (they don't change with weights)
+                        player_signals = []
+                        valid_indices = []
+                        for i, p in enumerate(eval_players):
                             try:
-                                signals = test_calculator.calculate_signals(p, gw)
-                                proj = convert_signals_to_projection(signals, test_weights, horizon=1)
+                                sig = calculator.calculate_signals(p, gw)
+                                player_signals.append(sig)
+                                valid_indices.append(i)
+                            except Exception:
+                                continue
 
-                                # Premium players (high ownership, high price) should project higher
-                                if p.price >= 10.0 and p.selected_by_percent > 15:
-                                    premium_scores.append(proj)
-                                elif p.price <= 5.0:
-                                    budget_scores.append(proj)
-                            except:
-                                pass
+                        valid_ppg = [actual_ppg[i] for i in valid_indices]
 
-                        # Good weights: premiums >> budget
-                        if premium_scores and budget_scores:
-                            avg_premium = sum(premium_scores) / len(premium_scores)
-                            avg_budget = sum(budget_scores) / len(budget_scores)
-                            ratio = avg_premium / max(0.1, avg_budget)
+                        if len(player_signals) < 20:
+                            st.warning(f"Only {len(player_signals)} players produced valid signals. Need 20+.")
+                        else:
+                            # Compute mean of actual ppg for correlation
+                            mean_actual = sum(valid_ppg) / len(valid_ppg)
 
-                            # Also reward variance (spread between best and worst)
-                            all_scores = premium_scores + budget_scores
-                            spread = max(all_scores) - min(all_scores) if all_scores else 0
+                            for iteration in range(opt_iterations):
+                                test_weights = EnhancedWeightConfig(
+                                    recent_form_weight=random.uniform(0.15, 0.35),
+                                    rolling_xg_weight=random.uniform(0.18, 0.38),
+                                    fixture_difficulty_weight=random.uniform(0.10, 0.25),
+                                    season_form_weight=random.uniform(0.03, 0.15),
+                                    ict_index_weight=random.uniform(0.02, 0.12),
+                                    team_momentum_weight=random.uniform(0.04, 0.15),
+                                    home_away_weight=random.uniform(0.02, 0.10),
+                                    opposition_weakness_weight=random.uniform(0.03, 0.12),
+                                    minutes_certainty_weight=random.uniform(0.03, 0.10),
+                                    ownership_trend_weight=random.uniform(0.01, 0.08),
+                                ).normalize()
 
-                            score = ratio * 0.7 + (spread / 5) * 0.3
+                                # Score: Pearson correlation between projected ppg and actual ppg
+                                projected = [
+                                    convert_signals_to_projection(sig, test_weights, horizon=1)
+                                    for sig in player_signals
+                                ]
+                                mean_proj = sum(projected) / len(projected)
 
-                        optimization_log.append({
-                            "iteration": iteration + 1,
-                            "score": score,
-                            "ratio": ratio if premium_scores and budget_scores else 0,
-                        })
+                                # Pearson r = sum((x-mx)(y-my)) / sqrt(sum((x-mx)^2) * sum((y-my)^2))
+                                cov = sum((p - mean_proj) * (a - mean_actual) for p, a in zip(projected, valid_ppg))
+                                var_proj = sum((p - mean_proj) ** 2 for p in projected)
+                                var_actual = sum((a - mean_actual) ** 2 for a in valid_ppg)
 
-                        if score > best_score:
-                            best_score = score
-                            best_weights = test_weights
+                                denom = (var_proj * var_actual) ** 0.5
+                                score = cov / denom if denom > 0 else 0.0
+
+                                optimization_log.append({
+                                    "iteration": iteration + 1,
+                                    "score": score,
+                                    "n_players": len(player_signals),
+                                })
+
+                                if score > best_score:
+                                    best_score = score
+                                    best_weights = test_weights
 
                     # Show results
-                    st.success(f"✅ Optimization complete! Best score: {best_score:.3f}")
+                    st.success(f"✅ Optimization complete! Best correlation: {best_score:.3f} (1.0 = perfect)")
 
                     col_opt1, col_opt2 = st.columns(2)
                     with col_opt1:
