@@ -1,7 +1,7 @@
 [project]
 name = "fpl-assistant"
 version = "0.1.0"
-description = "A local Fantasy Premier League assistant using optimization and LLM integration"
+description = "A Fantasy Premier League assistant using mathematical optimization for squad planning"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
@@ -20,9 +20,6 @@ dependencies = [
 
     # Optimization
     "pulp>=2.8.0",
-
-    # LLM Integration
-    "litellm>=1.30.0",
 
     # CLI
     "typer[all]>=0.12.0",

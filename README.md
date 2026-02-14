@@ -1,14 +1,17 @@
 # FPL Assistant
 
-A local Fantasy Premier League assistant using mathematical optimization and LLM integration to provide weekly squad recommendations, transfer suggestions, and strategic advice.
+A Fantasy Premier League assistant using mathematical optimization to provide weekly squad recommendations, transfer suggestions, and strategic advice.
 
 ## Features
 
 - **Multi-week optimization** - Plan transfers across 4-6 gameweeks to maximize expected points
-- **LLM-powered explanations** - AI assistant explains recommendations and answers questions
+- **xG-based projections** - Player projections powered by expected goals, assists, and underlying stats
 - **Chip strategy** - Optimal timing for Wildcard, Free Hit, Bench Boost, Triple Captain
 - **Blank/Double GW handling** - Automatically accounts for fixture congestion
 - **Risk analysis** - Effective ownership and differential tracking
+- **Set piece integration** - Penalty, corner, and FK taker boosts in projections
+- **Post-GW review** - Luck vs skill analysis for each gameweek
+- **Rival tracking** - Mini-league analysis with differential recommendations
 - **Dual interface** - Both Streamlit web UI and CLI available
 
 ## Installation
@@ -56,13 +59,6 @@ FPL_PASSWORD=your_fpl_password
 FPL_MANAGER_ID=1234567
 ```
 
-### LLM API Keys
-At least one LLM provider is needed for AI features:
-```
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
 ### Optional Settings
 See `.env.example` for all available configuration options.
 
@@ -80,14 +76,11 @@ uv run fpl-assistant status
 # Run optimization for next 5 gameweeks
 uv run fpl-assistant optimize 5
 
-# Get AI explanation of recommendations
-uv run fpl-assistant explain
-
-# Interactive chat with AI assistant
-uv run fpl-assistant chat
-
 # Compare two players
 uv run fpl-assistant compare "Salah" "Saka"
+
+# Backtest prediction accuracy
+uv run fpl-assistant backtest
 ```
 
 ### Web Interface (Streamlit)
@@ -107,8 +100,8 @@ fpl-assistant/
 │   ├── data/         # Data models and storage
 │   ├── optimizer/    # PuLP optimization engine
 │   ├── predictions/  # Points projection system
-│   ├── llm/          # LLM integration
-│   └── ui/           # Streamlit pages
+│   ├── analysis/     # Post-GW, rival, and differential analysis
+│   └── app.py        # Streamlit web UI
 ├── data/             # SQLite database and projections
 ├── tests/            # Test suite
 └── scripts/          # Utility scripts
@@ -151,5 +144,4 @@ MIT License - See LICENSE file for details.
 
 - [FPL API](https://fantasy.premierleague.com/api/bootstrap-static/) - Unofficial API documentation
 - [PuLP](https://coin-or.github.io/pulp/) - Linear programming library
-- [LiteLLM](https://github.com/BerriAI/litellm) - Multi-provider LLM interface
 - [Streamlit](https://streamlit.io/) - Web UI framework

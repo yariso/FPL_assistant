@@ -9,9 +9,6 @@ python-dotenv>=1.0.0
 # Optimization
 pulp>=2.8.0
 
-# LLM Integration (optional - comment out if not using)
-# litellm>=1.30.0
-
 # CLI
 typer[all]>=0.12.0
 rich>=13.7.0

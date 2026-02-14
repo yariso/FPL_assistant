@@ -521,39 +521,6 @@ def suggest() -> None:
 
 
 @app.command()
-def explain() -> None:
-    """
-    Get AI explanation of recommendations.
-
-    Uses LLM to provide detailed reasoning for the suggested plan.
-    """
-    console.print("[bold blue]Generating AI explanation...[/bold blue]")
-
-    # TODO: Implement LLM integration (Epic 6)
-    console.print("[yellow]LLM integration not yet implemented (Epic 6)[/yellow]")
-
-
-@app.command()
-def chat() -> None:
-    """
-    Interactive Q&A with the AI assistant.
-
-    Ask questions about your team, players, or strategy.
-    """
-    console.print(
-        Panel(
-            "[bold]FPL Assistant Chat[/bold]\n\n"
-            "Ask me anything about FPL strategy, player comparisons, or your team.\n"
-            "Type 'exit' or 'quit' to leave.",
-            style="blue",
-        )
-    )
-
-    # TODO: Implement chat loop with LLM (Epic 6)
-    console.print("[yellow]Chat feature not yet implemented (Epic 6)[/yellow]")
-
-
-@app.command()
 def compare(
     player1: str = typer.Argument(..., help="First player name"),
     player2: str = typer.Argument(..., help="Second player name"),
@@ -866,7 +833,7 @@ def version() -> None:
     """Show version information."""
     console.print("[bold]FPL Assistant[/bold] v0.1.0")
     console.print(
-        "A local Fantasy Premier League assistant using optimization and LLM integration"
+        "A Fantasy Premier League assistant using mathematical optimization"
     )
 
 

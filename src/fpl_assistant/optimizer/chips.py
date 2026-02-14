@@ -147,19 +147,16 @@ class ChipOptimizer:
             if sp.position > 11
         ]
 
-        bench_xp = sum(
-            gw_projections.get(sp.player_id, 0)
-            for sp in bench_players
-        )
-
-        # Adjust for probability of playing
+        # Calculate bench xP weighted by each player's probability of playing
+        bench_xp = 0.0
         for sp in bench_players:
+            player_xp = gw_projections.get(sp.player_id, 0)
             player = self.players.get(sp.player_id)
             if player:
                 play_prob = self._get_playing_probability(player)
-                # If player has high prob of playing, their value is real
-                # If low prob, BB is wasted
-                bench_xp *= play_prob
+                bench_xp += player_xp * play_prob
+            else:
+                bench_xp += player_xp
 
         is_double = gw_info.is_double if gw_info else False
 

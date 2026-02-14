@@ -70,13 +70,14 @@ BONUS_MULTIPLIER = 0.15  # ~15% of form translates to bonus
 # xG-Based Projection Constants (THE KEY TO ACCURACY!)
 # =============================================================================
 
-# xG conversion rates - how much of xG actually converts to FPL points
-# Based on historical analysis: xG is the BEST predictor of future goals
+# xG conversion rates - how much of xG actually converts to FPL goals
+# Forwards typically overperform xG (clinical finishing, high-quality chances)
+# Midfielders are closer to expected; defenders convert well on set pieces
 XG_GOAL_CONVERSION = {
     Position.GK: 0.5,   # GKs rarely score even when they have xG
     Position.DEF: 0.85,  # Defenders convert well on set pieces
-    Position.MID: 0.95,  # Midfielders are most consistent
-    Position.FWD: 0.90,  # Forwards have variance but high volume
+    Position.MID: 0.90,  # Midfielders close to expected
+    Position.FWD: 0.95,  # Forwards overperform xG (clinical finishers)
 }
 
 # xA conversion rates
@@ -302,8 +303,10 @@ class ProjectionEngine:
         5: 0.70,  # Very hard fixture
     }
 
-    # Home advantage multiplier
-    HOME_ADVANTAGE = 1.08
+    # Home advantage multipliers by position
+    # Attacking home advantage is ~6%; defensive is smaller ~3%
+    HOME_ADVANTAGE_ATTACK = 1.06  # MID/FWD
+    HOME_ADVANTAGE_DEFENCE = 1.03  # GK/DEF
 
     def __init__(
         self,
@@ -858,8 +861,15 @@ class ProjectionEngine:
             # Fixture difficulty adjustment
             fdr_mult = self.FDR_MULTIPLIERS.get(fix_analysis.difficulty, 1.0)
 
-            # Home advantage
-            home_mult = self.HOME_ADVANTAGE if fix_analysis.is_home else 1.0
+            # Home advantage (position-aware: attackers benefit more)
+            if fix_analysis.is_home:
+                home_mult = (
+                    self.HOME_ADVANTAGE_ATTACK
+                    if player.position in (Position.MID, Position.FWD)
+                    else self.HOME_ADVANTAGE_DEFENCE
+                )
+            else:
+                home_mult = 1.0
 
             # Team strength factor
             team_attack = self._team_attack_strength.get(player.team_id, 1.0)
@@ -906,14 +916,17 @@ class ProjectionEngine:
             dc_pts = 0.0
 
             # 6. BONUS POINTS - Use regressed bonus_per_90 from Player model
-            # The Player.bonus_per_90 property already includes regression-to-mean
-            # Use getattr + validity check for backward compatibility
+            # Position-aware: attacking players earn bonus through goals/assists;
+            # defensive players earn it through clean sheets (less consistent)
             bonus_per_90 = getattr(player, 'bonus_per_90', None)
             if not self._is_valid_derived_field(bonus_per_90, player, 'bonus_per_90'):
-                # Fallback calculation if computed_field not available or invalid
                 bonus_per_90 = self._calculate_bonus_per_90_fallback(player)
             bonus_per_90 = self._clamp_derived_field(bonus_per_90, 'bonus_per_90')
-            bonus_pts = bonus_per_90 * p_60_plus * fdr_mult
+            # Scale bonus ceiling by position (defenders/GKs get bonus less consistently)
+            if player.position in (Position.GK, Position.DEF):
+                bonus_pts = bonus_per_90 * 0.7 * p_60_plus * fdr_mult
+            else:
+                bonus_pts = bonus_per_90 * p_60_plus * fdr_mult
 
             # 7. NEGATIVE EVENTS - Cards (per-match events, not per-minute!)
             # Yellow cards: -1 pt, Red cards: -3 pts
@@ -1205,7 +1218,12 @@ class ProjectionEngine:
         # Calculate fixture multiplier
         fdr_mult = self.FDR_MULTIPLIERS.get(fix_analysis.difficulty, 1.0)
         if fix_analysis.is_home:
-            fdr_mult *= self.HOME_ADVANTAGE
+            home_adv = (
+                self.HOME_ADVANTAGE_ATTACK
+                if player.position in (Position.MID, Position.FWD)
+                else self.HOME_ADVANTAGE_DEFENCE
+            )
+            fdr_mult *= home_adv
 
         # Team strengths
         team_attack = self._team_attack_strength.get(player.team_id, 1.0)
