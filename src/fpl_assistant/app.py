@@ -3885,12 +3885,13 @@ def show_gw_review():
     if st.button("🔎 Analyze Gameweek", type="primary"):
         with st.spinner(f"Analyzing GW{review_gw}..."):
             try:
-                # Get picks for that GW
+                # Get picks and live points for that GW
                 from fpl_assistant.api import SyncFPLClient
                 client = SyncFPLClient()
 
                 try:
                     picks_data = client.get_entry_picks(manager_id, review_gw)
+                    live_data = client.get_live_event(review_gw)
                 finally:
                     client.close()
 
@@ -3899,24 +3900,15 @@ def show_gw_review():
                     st.error(f"No picks found for GW{review_gw}. Make sure this gameweek has been played.")
                     return
 
-                # Get actual results from the API element summary
+                # Get actual points from live event data
                 actual_results = {}
+                live_elements = {e["id"]: e for e in live_data.get("elements", [])}
                 for pick in picks:
                     pid = pick["element"]
-                    p = player_dict.get(pid)
-                    if p:
-                        # Use the points from the picks data if available
-                        # The API includes points in the picks response for completed GWs
-                        actual_results[pid] = pick.get("points", 0) if "points" in pick else 0
-
-                # If no points in picks, try to calculate from player history
-                if all(v == 0 for v in actual_results.values()) and actual_results:
-                    # Fallback: use player event points from element summary
-                    for pick in picks:
-                        pid = pick["element"]
-                        p = player_dict.get(pid)
-                        if p and hasattr(p, 'event_points'):
-                            actual_results[pid] = p.event_points
+                    if pid in live_elements:
+                        actual_results[pid] = live_elements[pid].get("stats", {}).get("total_points", 0)
+                    else:
+                        actual_results[pid] = 0
 
                 # Get predictions for that GW
                 engine = ProjectionEngine(players, teams, fixtures)
